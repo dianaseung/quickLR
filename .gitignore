@@ -1,0 +1,11 @@
+# ENV
+*.ENV
+*.env
+
+# FILES
+*.tar.gz
+*.zip
+
+# LOGS
+*.dat
+*.log
