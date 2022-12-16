@@ -33,8 +33,10 @@ This bash script (Linux) quickly sets up a basic Liferay bundle and environment 
     │   │   ├── liferay-dxp-tomcat-7.4.13.u35   # 
     │   │   │   ├── liferay-dxp-7.4.13.u35      # 
     │   ├── 7.3                                 # 
-    │   ├── 7.3                                 # 
-    │   └── ...                                 # 
+    │   ├── 7.2                                 # 
+    │   ├── 7.1                                 # 
+    │   ├── 7.0                                 # 
+    │   ├── License                             # 
     ├── PROJECT                                 # Parent folder for all Projects
     │   ├── CHICAGOLCS                          # Project Code 
     │   │   ├── liferay-dxp-7.4.13.u5           # 
@@ -65,7 +67,7 @@ Use `nano ~/.bashrc`to set the following environmental variables:
 export LRDIR=[liferay_directory]
 export PROJECTDIR=[project_directory]
 ```
-Replace [liferay_directory] and [project_directory] with the appropriate paths.
+Replace `[liferay_directory]` and `[project_directory]` with the appropriate paths.
 
 ---
 
@@ -75,3 +77,12 @@ Replace [liferay_directory] and [project_directory] with the appropriate paths.
 ###
 
 ---
+
+# Upcoming Project Features
+
+- instructions for .my.cnf setup
+- set license directory in .bashrc
+- include example portal-ext.properties
+- instructions for MySQL install/setup
+
+- cleanup script to delete database and delete (choose either project or bundle)
