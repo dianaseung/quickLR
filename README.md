@@ -36,7 +36,7 @@ This bash script (Linux) quickly sets up a basic Liferay bundle and environment 
     │   ├── 7.2                                 # 
     │   ├── 7.1                                 # 
     │   ├── 7.0                                 # 
-    │   ├── License                             # 
+    │   ├── License                             # Where licenses are stored
     ├── PROJECT                                 # Parent folder for all Projects
     │   ├── CHICAGOLCS                          # Project Code 
     │   │   ├── liferay-dxp-7.4.13.u5           # 
@@ -51,10 +51,11 @@ This bash script (Linux) quickly sets up a basic Liferay bundle and environment 
     │   │   │   ├── osgi                        # 
     │   │   │   ├── portal-ext.properties       # 
     │   │   │   ├── ...                         # 
-    │   ├── LRWWW                               # End-to-end, integration tests (alternatively `e2e`)
-    │   ├── ...                                 # End-to-end, integration tests (alternatively `e2e`)
+    │   ├── LRWWW                               # Project Code
+    │   ├── ...                                 # 
     └── ...
-
+- Download [this Liferay.zip|https://drive.google.com/file/d/1hDHjUnPx3YES7_FErathEnuGcrfFX1Kp/view?usp=sharing] and extract to quickly setup a Folder Structure like above.
+- Download Liferay Licenses for DXP 7.0, 7.1, 7.2, 7.3 and 7.4 and place in `Liferay/DXP/License/` directory
 
 ---
 
@@ -87,3 +88,4 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 - instructions for MySQL install/setup
 
 - cleanup script to delete database and delete (choose either project or bundle)
+- automated script to rename and move Liferay .tar.gz files to the appropriate `Liferay/DXP/` directory upon download to Downloads folder
