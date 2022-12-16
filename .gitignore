@@ -4,7 +4,6 @@
 
 # FILES
 *.tar.gz
-*.zip
 
 # LOGS
 *.dat
