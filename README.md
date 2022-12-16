@@ -20,6 +20,10 @@ This bash script (Linux) quickly sets up a basic Liferay bundle and environment 
 
 ### Folder Structure
 
+<details>
+<summary>Folder Structure</summary>
+<br>
+
     LIFERAY
     ├── DXP                                     # Parent folder for all clean DXP Bundle
     │   ├── 7.4                                 # Liferay Version
@@ -54,6 +58,7 @@ This bash script (Linux) quickly sets up a basic Liferay bundle and environment 
     │   ├── LRWWW                               # Project Code
     │   ├── ...                                 # 
     └── ...
+</details>
 
 ---
 
