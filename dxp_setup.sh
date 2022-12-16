@@ -3,9 +3,13 @@
 # source /home/dia/Downloads/Liferay/setenv.sh | tee ./log.dat
 # GLOBAL VARIABLES
 DATE=$(date +%Y%m%d)
+echo "CHECK: LRDIR ${LRDIR}"
+echo "CHECK: PROJECTDIR ${PROJECTDIR}"
 
 # NAME THE PROJECT
 read -p 'Project Code: ' project
+mkdir -p ${PROJECTDIR}/$project/
+echo "SUCCESS: Project created at ${PROJECTDIR}/$project/"
 
 # Select DXP version
 intro='what dxp version?'
@@ -20,12 +24,12 @@ select version in "${DXP[@]}"; do
             # do
             #     echo "Please input the Update #"
             #     echo
-            #     read -p 'Select DXP 7.4 patch level (Update): ' update
+            #     read -p 'Select DXP $version patch level (Update): ' update
             # done
 
             case ${update#[-+]} in
                 *[!0-9]* | '') echo "ERROR: Please input the Update #:" ;;
-                * ) echo "STATUS: Setting up a $project folder with DXP 7.4 Update $update bundle..." ;;
+                * ) echo "STATUS: Setting up a $project folder with DXP $version Update $update bundle..." ;;
             esac
 
             echo
@@ -35,14 +39,14 @@ select version in "${DXP[@]}"; do
             SCHEMA="74_${project}_U${update}"
             # echo "Ok, setting up a $project folder with DXP 7.4 Update $update bundle..."
             # CHECK IF DIRECTORY EXISTS ALREADY
-            if [ -d "${PROJECT_DIR}/$project/liferay-dxp-7.4.13.u$update/" ]; then
+            if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.u$update/" ]; then
                 echo "Project Directory $project with Update u$update folder exists already"
-                echo "Creating Update u$update folder with Date appended... /$project/liferay-dxp-7.4.13.u$update.${DATE}"
-
-                \cp -r /${LIFERAYDIR}/7.4/liferay-dxp-tomcat-7.4.13.u$update/liferay-dxp-7.4.13.u$update ${PROJECT_DIR}/$project/liferay-dxp-7.4.13.u$update.${DATE}
-                \cp /${LIFERAYDIR}/DXP/Keys/7.4.xml ${PROJECT_DIR}/$project/liferay-dxp-7.4.13.u$update.${DATE}/deploy/
-                \cp /${LIFERAYDIR}/DXP/portal-ext.properties ${PROJECT_DIR}/$project/liferay-dxp-7.4.13.u$update.${DATE}/
-                echo "COMPLETE: Directory created at ${PROJECT_DIR}/$project/liferay-dxp-7.4.13.u$update.${DATE}"
+                echo "Creating Update u$update folder with Date appended... /$project/liferay-dxp-$version.u$update.${DATE}"
+                echo "---"
+                cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}
+                cp ${LRDIR}/DXP/License/$version.xml ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}/deploy/
+                cp ${LRDIR}/DXP/portal-ext.properties ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}/
+                echo "COMPLETE: Directory created at ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}"
                 
                 # MAKE THE MYSQL DB
                 SCHEMAUNQ=${SCHEMA}_${DATE}
@@ -54,14 +58,22 @@ select version in "${DXP[@]}"; do
                     echo "FAIL: Database ${SCHEMAUNQ} not created. Please create manually."
                 fi
                 # UPDATE PORTAL-EXT WITH NEW DB
-                sed -i "s/SCHEMA/${SCHEMAUNQ}/g" ${PROJECT_DIR}/$project/liferay-dxp-7.4.13.u$update.${DATE}/portal-ext.properties
+                sed -i "s/SCHEMA/${SCHEMAUNQ}/g" ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}/portal-ext.properties
                 echo "COMPLETE: portal-ext.properties updated with newly made schema!"
             else
                 echo "Project Directory $project with Update folder u$update does not exist yet"
-                echo "Creating Update folder... /$project/liferay-dxp-7.4.13.u$update"
-                \cp -r /${LIFERAYDIR}/7.4/liferay-dxp-tomcat-7.4.13.u$update/liferay-dxp-7.4.13.u$update ${PROJECT_DIR}/$project/liferay-dxp-7.4.13.u$update
-                \cp /${LIFERAYDIR}/Keys/7.4.xml ${PROJECT_DIR}/$project/liferay-dxp-7.4.13.u$update/deploy/
-                \cp /${LIFERAYDIR}/portal-ext.properties ${PROJECT_DIR}/$project/liferay-dxp-7.4.13.u$update/
+                echo "Creating Update folder... /$project/liferay-dxp-$version.u$update"
+                echo "---"
+                cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update ${PROJECTDIR}/$project/liferay-dxp-$version.u$update
+                if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.u$update/" ]; then
+                    echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/liferay-dxp-$version.u$update"
+                else
+                    echo "FAIL: Folder not created"
+                    echo "DEBUG: Source ${LRDIR}/$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
+                    echo "DEBUG: Destination ${PROJECTDIR}/$project/liferay-dxp-$version.u$update"
+                fi
+                cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/liferay-dxp-$version.u$update/deploy/
+                cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/liferay-dxp-$version.u$update/
                 # MAKE THE MYSQL SCHEMA
                 # mysql -udia -e "CREATE SCHEMA ${SCHEMA}"
                 # CHECKDB=`mysql -udia -e "SHOW DATABASES" | grep $SCHEMA`
@@ -73,7 +85,7 @@ select version in "${DXP[@]}"; do
                     echo "FAIL: Database ${SCHEMA} not created. Please create manually."
                 fi
                 # UPDATE PORTAL-EXT WITH NEW DB
-                sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECT_DIR}/$project/liferay-dxp-7.4.13.u$update/portal-ext.properties
+                sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/liferay-dxp-$version.u$update/portal-ext.properties
                 echo "COMPLETE: portal-ext.properties updated with newly made schema!"
             fi
             break
@@ -93,55 +105,116 @@ select version in "${DXP[@]}"; do
 
             if (( $update > 3 )); then
                 echo "Patch level is an Update: u$update"
+                SCHEMA="73_${project}_U${update}"
+                echo "Ok, setting up a $project folder with DXP $version Update $update bundle..."
+                # CHECK IF DIRECTORY EXISTS ALREADY
+                if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.u$update/" ]; then
+                    echo "Project Directory $project with Update u$update folder exists already"
+                    echo "Creating Update u$update folder with Date appended... /$project/liferay-dxp-$version.u$update.${DATE}"
+                    echo "---"
+                    cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}
+                    cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}/deploy/
+                    cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}/
+                    echo "COMPLETE: Directory created at ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}"
+                    
+                    # MAKE THE MYSQL DB
+                    SCHEMAUNQ=${SCHEMA}_${DATE}
+                    mysql -udia -e "CREATE SCHEMA ${SCHEMAUNQ}";
+                    CHECKDB=`mysql -e "SHOW DATABASES" | grep ${SCHEMAUNQ}`
+                    if [ $CHECKDB == ${SCHEMAUNQ} ]; then
+                        echo "COMPLETE: Database ${SCHEMAUNQ} made!"
+                    else
+                        echo "FAIL: Database ${SCHEMAUNQ} not created. Please create manually."
+                    fi
+                    # UPDATE PORTAL-EXT WITH NEW DB
+                    sed -i "s/SCHEMA/${SCHEMAUNQ}/g" ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}/portal-ext.properties
+                    echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+                else
+                    echo "Project Directory $project with Update folder u$update does not exist yet"
+                    echo "Creating Update folder... /$project/liferay-dxp-$version.u$update"
+                    echo "from ${LRDIR}"
+                    echo "to ${PROJECTDIR}"
+                    echo "---"
+                    cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update ${PROJECTDIR}/$project/liferay-dxp-$version.u$update
+                    if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.u$update/" ]; then
+                        echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/liferay-dxp-$version.u$update"
+                    else
+                        echo "FAIL: Folder not created"
+                        echo "DEBUG: Source ${LRDIR}/$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
+                        echo "DEBUG: Destination ${PROJECTDIR}/$project/liferay-dxp-$version.u$update"
+                    fi
+                    cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/liferay-dxp-$version.u$update/deploy/
+                    cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/liferay-dxp-$version.u$update/
+                    # MAKE THE MYSQL SCHEMA
+                    # mysql -udia -e "CREATE SCHEMA ${SCHEMA}"
+                    # CHECKDB=`mysql -udia -e "SHOW DATABASES" | grep $SCHEMA`
+                    mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
+                    CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
+                    if [ $CHECKDB == $SCHEMA ]; then
+                        echo "COMPLETE: Database ${SCHEMA} made!"
+                    else
+                        echo "FAIL: Database ${SCHEMA} not created. Please create manually."
+                    fi
+                    # UPDATE PORTAL-EXT WITH NEW DB
+                    sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/liferay-dxp-$version.u$update/portal-ext.properties
+                    echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+                fi
             else
                 echo "Patch level is a FP: dxp-$update"
+                SCHEMA="73_${project}_dxp${update}"
+                echo "Ok, setting up a $project folder with DXP $version Update $update bundle..."
+                # CHECK IF DIRECTORY EXISTS ALREADY
+                if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/" ]; then
+                    echo "Project Directory $project with Update dxp-$update folder exists already"
+                    echo "Creating Update u$update folder with Date appended... /$project/liferay-dxp-$version.dxp-$update.${DATE}"
+                    echo "---"
+                    cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1 ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update.${DATE}
+                    cp ${LRDIR}/DXP/License/$version.xml ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update.${DATE}/deploy/
+                    cp ${LRDIR}/DXP/portal-ext.properties ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update.${DATE}/
+                    echo "COMPLETE: Directory created at ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update.${DATE}"
+                    
+                    # MAKE THE MYSQL DB
+                    SCHEMAUNQ=${SCHEMA}_${DATE}
+                    mysql -udia -e "CREATE SCHEMA ${SCHEMAUNQ}";
+                    CHECKDB=`mysql -e "SHOW DATABASES" | grep ${SCHEMAUNQ}`
+                    if [ $CHECKDB == ${SCHEMAUNQ} ]; then
+                        echo "COMPLETE: Database ${SCHEMAUNQ} made!"
+                    else
+                        echo "FAIL: Database ${SCHEMAUNQ} not created. Please create manually."
+                    fi
+                    # UPDATE PORTAL-EXT WITH NEW DB
+                    sed -i "s/SCHEMA/${SCHEMAUNQ}/g" ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update.${DATE}/portal-ext.properties
+                    echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+                else
+                    echo "Project Directory $project with Update folder dxp-$update does not exist yet"
+                    echo "Creating Update folder... /$project/liferay-dxp-$version.dxp-$update"
+                    echo "---"
+                    cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1 ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update
+                    if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/" ]; then
+                        echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update"
+                    else
+                        echo "FAIL: Folder not created"
+                    fi
+                    cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/deploy/
+                    cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/
+                    # MAKE THE MYSQL SCHEMA
+                    # mysql -udia -e "CREATE SCHEMA ${SCHEMA}"
+                    # CHECKDB=`mysql -udia -e "SHOW DATABASES" | grep $SCHEMA`
+                    mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
+                    CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
+                    if [ $CHECKDB == $SCHEMA ]; then
+                        echo "COMPLETE: Database ${SCHEMA} made!"
+                    else
+                        echo "FAIL: Database ${SCHEMA} not created. Please create manually."
+                    fi
+                    # UPDATE PORTAL-EXT WITH NEW DB
+                    sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/portal-ext.properties
+                    echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+                fi
             fi
 
 
-            SCHEMA="73_${project}_U${update}"
-            # echo "Ok, setting up a $project folder with DXP 7.3 Update $update bundle..."
-            # # CHECK IF DIRECTORY EXISTS ALREADY
-            # if [ -d "/home/${USER}/Downloads/Liferay/PROJECTS/$project/liferay-dxp-7.4.13.u$update/" ]; then
-            #     echo "Project Directory $project with Update u$update folder exists already"
-            #     echo "Creating Update u$update folder with Date appended... /$project/liferay-dxp-7.4.13.u$update.${DATE}"
-
-            #     \cp -r /home/${USER}/Downloads/Liferay/DXP/7.4/liferay-dxp-tomcat-7.4.13.u$update/liferay-dxp-7.4.13.u$update /home/${USER}/Downloads/Liferay/PROJECTS/$project/liferay-dxp-7.4.13.u$update.${DATE}
-            #     \cp /home/${USER}/Downloads/Liferay/DXP/Keys/7.4.xml /home/${USER}/Downloads/Liferay/PROJECTS/$project/liferay-dxp-7.4.13.u$update.${DATE}/deploy/
-            #     \cp /home/${USER}/Downloads/Liferay/DXP/portal-ext.properties /home/${USER}/Downloads/Liferay/PROJECTS/$project/liferay-dxp-7.4.13.u$update.${DATE}/
-            #     echo "COMPLETE: Directory created at /home/${USER}/Downloads/Liferay/PROJECTS/$project/liferay-dxp-7.4.13.u$update.${DATE}"
-                
-            #     # MAKE THE MYSQL DB
-            #     SCHEMAUNQ=${SCHEMA}_${DATE}
-            #     mysql -udia -e "CREATE SCHEMA ${SCHEMAUNQ}";
-            #     CHECKDB=`mysql -e "SHOW DATABASES" | grep ${SCHEMAUNQ}`
-            #     if [ $CHECKDB == ${SCHEMAUNQ} ]; then
-            #         echo "COMPLETE: Database ${SCHEMAUNQ} made!"
-            #     else
-            #         echo "FAIL: Database ${SCHEMAUNQ} not created. Please create manually."
-            #     fi
-            #     # UPDATE PORTAL-EXT WITH NEW DB
-            #     sed -i "s/SCHEMA/$project/g" /home/${USER}/Downloads/Liferay/PROJECTS/$project/liferay-dxp-7.4.13.u$update.${DATE}/portal-ext.properties
-            #     echo "COMPLETE: portal-ext.properties updated with newly made schema!"
-            # else
-            #     echo "Project Directory $project with Update folder u$update does not exist yet"
-            #     echo "Creating Update folder... /$project/liferay-dxp-7.4.13.u$update"
-            #     \cp -r /home/${USER}/Downloads/Liferay/DXP/7.4/liferay-dxp-tomcat-7.4.13.u$update/liferay-dxp-7.4.13.u$update /home/${USER}/Downloads/Liferay/PROJECTS/$project/liferay-dxp-7.4.13.u$update
-            #     \cp /home/${USER}/Downloads/Liferay/DXP/Keys/7.4.xml /home/${USER}/Downloads/Liferay/PROJECTS/$project/liferay-dxp-7.4.13.u$update/deploy/
-            #     \cp /home/${USER}/Downloads/Liferay/DXP/portal-ext.properties /home/${USER}/Downloads/Liferay/PROJECTS/$project/liferay-dxp-7.4.13.u$update/
-            #     # MAKE THE MYSQL SCHEMA
-            #     # mysql -udia -e "CREATE SCHEMA ${SCHEMA}"
-            #     # CHECKDB=`mysql -udia -e "SHOW DATABASES" | grep $SCHEMA`
-            #     mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
-            #     CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
-            #     if [ $CHECKDB == $SCHEMA ]; then
-            #         echo "COMPLETE: Database ${SCHEMA} made!"
-            #     else
-            #         echo "FAIL: Database ${SCHEMA} not created. Please create manually."
-            #     fi
-            #     # UPDATE PORTAL-EXT WITH NEW DB
-            #     sed -i "s/SCHEMA/$project/g" /home/${USER}/Downloads/Liferay/PROJECTS/$project/liferay-dxp-7.4.13.u$update/portal-ext.properties
-            #     echo "COMPLETE: portal-ext.properties updated with newly made schema!"
-            # fi
+            
             break
             ;;
         "7.2.10" | "7.1.10" | "7.0.10")
@@ -161,4 +234,4 @@ echo "---"
 echo
 # TODO: If directory exists, success msg + xdg-open; else error msg 
 echo "SUCCESS: Finished setup of DXP $version u${update} folder for $project"
-xdg-open ${PROJECT_DIR}/$project
+xdg-open ${PROJECTDIR}/$project
