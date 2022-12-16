@@ -64,6 +64,7 @@ This bash script (Linux) quickly sets up a basic Liferay bundle and environment 
 
 Use `nano ~/.bashrc`to set the following environmental variables:
 ```
+# Environment Variables for quickLR usage (github.com/dianaseung/quickLR)
 export LRDIR=[liferay_directory]
 export PROJECTDIR=[project_directory]
 ```
