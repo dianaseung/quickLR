@@ -132,8 +132,6 @@ select version in "${DXP[@]}"; do
                 else
                     echo "Project Directory $project with Update folder u$update does not exist yet"
                     echo "Creating Update folder... /$project/liferay-dxp-$version.u$update"
-                    echo "from ${LRDIR}"
-                    echo "to ${PROJECTDIR}"
                     echo "---"
                     cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update ${PROJECTDIR}/$project/liferay-dxp-$version.u$update
                     if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.u$update/" ]; then
@@ -166,13 +164,22 @@ select version in "${DXP[@]}"; do
                 # CHECK IF DIRECTORY EXISTS ALREADY
                 if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/" ]; then
                     echo "Project Directory $project with Update dxp-$update folder exists already"
-                    echo "Creating Update u$update folder with Date appended... /$project/liferay-dxp-$version.dxp-$update.${DATE}"
+                    BUNDLED="liferay-dxp-$version.dxp-$update.${DATE}"
+                    echo "Creating Update u$update folder... /$project/$BUNDLED"
                     echo "---"
-                    cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1 ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update.${DATE}
-                    cp ${LRDIR}/DXP/License/$version.xml ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update.${DATE}/deploy/
-                    cp ${LRDIR}/DXP/portal-ext.properties ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update.${DATE}/
-                    echo "COMPLETE: Directory created at ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update.${DATE}"
+                    cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1 ${PROJECTDIR}/$project/$BUNDLED
+                    cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
+                    cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
+                    echo "COMPLETE: Directory created at ${PROJECTDIR}/$project/$BUNDLED"
                     
+                    # COPY FP
+                    cp ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
+                    sh ./patching-tool.sh info
+                    sh ./patching-tool.sh install
+                    sh ./patching-tool.sh info > patchinfo.txt 
+                    cat ./patchinfo.txt| grep installed patchinfo.txt
+                    echo "COMPLETE: Fix Pack dxp-$update installed!"
+
                     # MAKE THE MYSQL DB
                     SCHEMAUNQ=${SCHEMA}_${DATE}
                     mysql -udia -e "CREATE SCHEMA ${SCHEMAUNQ}";
@@ -183,20 +190,33 @@ select version in "${DXP[@]}"; do
                         echo "FAIL: Database ${SCHEMAUNQ} not created. Please create manually."
                     fi
                     # UPDATE PORTAL-EXT WITH NEW DB
-                    sed -i "s/SCHEMA/${SCHEMAUNQ}/g" ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update.${DATE}/portal-ext.properties
+                    sed -i "s/SCHEMA/${SCHEMAUNQ}/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
                     echo "COMPLETE: portal-ext.properties updated with newly made schema!"
                 else
                     echo "Project Directory $project with Update folder dxp-$update does not exist yet"
+                    BUNDLED="liferay-dxp-$version.dxp-$update"
                     echo "Creating Update folder... /$project/liferay-dxp-$version.dxp-$update"
                     echo "---"
-                    cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1 ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update
+                    cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1 ${PROJECTDIR}/$project/$BUNDLED
                     if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/" ]; then
-                        echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update"
+                        echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED"
                     else
                         echo "FAIL: Folder not created"
                     fi
-                    cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/deploy/
-                    cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/
+                    cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
+                    cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
+                    echo "COMPLETE: Directory created at ${PROJECTDIR}/$project/$BUNDLED"
+                    
+                    # COPY FP
+                    # liferay-fix-pack-dxp-1-7310
+                    echo "${LRDIR}/DXP/$version/FP/liferay-fix-pack-dxp-$update-7310.zip"
+                    cp ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
+                    
+                    #( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ | ./patching-tool.sh info | ./patching-tool.sh install)
+                    #echo "${PROJECTDIR}/$project/$BUNDLED/patching-tool/"
+                    #cat ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patchinfo.txt| grep installed patchinfo.txt
+                    #echo "COMPLETE: Fix Pack dxp-$update installed!"
+
                     # MAKE THE MYSQL SCHEMA
                     # mysql -udia -e "CREATE SCHEMA ${SCHEMA}"
                     # CHECKDB=`mysql -udia -e "SHOW DATABASES" | grep $SCHEMA`
@@ -208,7 +228,7 @@ select version in "${DXP[@]}"; do
                         echo "FAIL: Database ${SCHEMA} not created. Please create manually."
                     fi
                     # UPDATE PORTAL-EXT WITH NEW DB
-                    sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/portal-ext.properties
+                    sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
                     echo "COMPLETE: portal-ext.properties updated with newly made schema!"
                 fi
             fi
