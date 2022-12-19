@@ -43,13 +43,14 @@ select version in "${DXP[@]}"; do
                 echo "Project Directory $project with Update u$update folder exists already"
                 echo "Creating Update u$update folder with Date appended... /$project/liferay-dxp-$version.u$update.${DATE}"
                 echo "---"
+                SCHEMA=74_${project}_U${update}_${DATE}
+
                 cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}
-                cp ${LRDIR}/DXP/License/$version.xml ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}/deploy/
-                cp ${LRDIR}/DXP/portal-ext.properties ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}/
+                cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}/deploy/
+                cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}/
                 echo "COMPLETE: Directory created at ${PROJECTDIR}/$project/liferay-dxp-$version.u$update.${DATE}"
                 
                 # MAKE THE MYSQL DB
-                SCHEMAUNQ=${SCHEMA}_${DATE}
                 mysql -udia -e "CREATE SCHEMA ${SCHEMAUNQ}";
                 CHECKDB=`mysql -e "SHOW DATABASES" | grep ${SCHEMAUNQ}`
                 if [ $CHECKDB == ${SCHEMAUNQ} ]; then
@@ -88,6 +89,13 @@ select version in "${DXP[@]}"; do
                 sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/liferay-dxp-$version.u$update/portal-ext.properties
                 echo "COMPLETE: portal-ext.properties updated with newly made schema!"
             fi
+
+            ## UNIVERSAL
+
+            # check DATE - exists
+
+            # vs normal - doesn't exist
+
             break
             ;;
         "7.3.10")
@@ -209,7 +217,7 @@ select version in "${DXP[@]}"; do
                     
                     # COPY FP
                     # liferay-fix-pack-dxp-1-7310
-                    echo "${LRDIR}/DXP/$version/FP/liferay-fix-pack-dxp-$update-7310.zip"
+                    echo "${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip"
                     cp ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
                     
                     #( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ | ./patching-tool.sh info | ./patching-tool.sh install)
