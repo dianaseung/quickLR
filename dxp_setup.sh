@@ -138,18 +138,16 @@ select version in "${DXP[@]}"; do
                 # CHECK IF DIRECTORY EXISTS ALREADY
                 if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/" ]; then
                     BUNDLED="liferay-dxp-$version.dxp-$update.${DATE}"
-                    echo "Project Directory $project with Update dxp-$update folder exists already"
-                    echo "Creating Update u$update folder... /$project/$BUNDLED"
-                    echo "---"
                     SCHEMA="73_${project}_dxp${update}_${DATE}"
+                    echo "Project Directory $project with Update dxp-$update folder exists already"
                 else
                     BUNDLED="liferay-dxp-$version.dxp-$update"
-                    echo "Project Directory $project with Update folder dxp-$update does not exist yet"
-                    echo "Creating Update folder... /$project/liferay-dxp-$version.dxp-$update"
-                    echo "---"
                     SCHEMA="73_${project}_dxp${update}"
+                    echo "Project Directory $project with Update folder dxp-$update does not exist yet"
                 fi
 
+                echo "Creating Update u$update folder... /$project/$BUNDLED"
+                echo "---"
                 # UNIVERSAL FOR FP
                 cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1 ${PROJECTDIR}/$project/$BUNDLED
                 if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/" ]; then
@@ -163,8 +161,14 @@ select version in "${DXP[@]}"; do
                 
                 # COPY FP
                 # liferay-fix-pack-dxp-1-7310
-                echo "${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip"
+                echo "Fix Pack sourced from ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip"
                 cp ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
+                if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/liferay-fix-pack-dxp-$update-7310.zip ]; then
+                    echo "Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/liferay-fix-pack-dxp-$update-7310.zip"
+                else
+                    echo "FAIL: Fix Pack not placed. Please manually install Fix Pack."
+                    xdg-open ${PROJECTDIR}/$project
+                fi
                 
                 # TODO - see if I can run patching-tool info from script in another directory
                 #( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ | ./patching-tool.sh info | ./patching-tool.sh install)
@@ -194,9 +198,9 @@ select version in "${DXP[@]}"; do
             read -p "Select DXP $version patch level (FP #): " update
             until [[ $update =~ ^[+]?[0-9]+$ ]]
             do
-                echo "ERROR: Please input valid Update # (integer only):"
+                echo "ERROR: Please input valid Fix Pack # (integer only):"
                 echo
-                read -p 'Select DXP 7.3 patch level (Update or FP #): ' update
+                read -p "Select DXP $version patch level (FP #): " update
             done
             echo
             echo "---"
@@ -207,17 +211,16 @@ select version in "${DXP[@]}"; do
             # CHECK IF DIRECTORY EXISTS ALREADY
             if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/" ]; then
                 BUNDLED="liferay-dxp-$version.dxp-$update.${DATE}"
-                echo "Project Directory $project with Update dxp-$update folder exists already"
-                echo "Creating Update u$update folder... /$project/$BUNDLED"
-                echo "---"
                 SCHEMA="73_${project}_dxp${update}_${DATE}"
+                echo "Project Directory $project with Update dxp-$update folder exists already"
             else
                 BUNDLED="liferay-dxp-$version.dxp-$update"
-                echo "Project Directory $project with Update folder dxp-$update does not exist yet"
-                echo "Creating Update folder... /$project/liferay-dxp-$version.dxp-$update"
-                echo "---"
                 SCHEMA="73_${project}_dxp${update}"
+                echo "Project Directory $project with Update folder dxp-$update does not exist yet"
             fi
+
+            echo "Creating Update u$update folder... /$project/$BUNDLED"
+            echo "---"
 
             # UNIVERSAL FOR FP
             cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1 ${PROJECTDIR}/$project/$BUNDLED
@@ -232,9 +235,17 @@ select version in "${DXP[@]}"; do
             
             # COPY FP
             # liferay-fix-pack-dxp-1-7310
-            echo "${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip"
-            cp ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
-            
+            echo "version trimmed ${version//.}"
+            versiontrim=${version//.}
+            echo "Fix Pack sourced from ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-$versiontrim.zip"
+            cp ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-$versiontrim.zip ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
+            if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/liferay-fix-pack-dxp-$update-$versiontrim.zip ]; then
+                echo "Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/liferay-fix-pack-dxp-$update-$versiontrim.zip"
+            else
+                echo "FAIL: Fix Pack not placed. Please manually install Fix Pack."
+                xdg-open ${PROJECTDIR}/$project
+            fi
+
             # TODO - see if I can run patching-tool info from script in another directory
             #( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ | ./patching-tool.sh info | ./patching-tool.sh install)
             #echo "${PROJECTDIR}/$project/$BUNDLED/patching-tool/"
@@ -267,5 +278,5 @@ echo
 echo "---"
 echo
 # TODO: If directory exists, success msg + xdg-open; else error msg 
-echo "SUCCESS: Finished setup of DXP $version u${update} folder for $project"
+echo "SUCCESS: Finished setup of DXP $version ${update} folder for $project"
 xdg-open ${PROJECTDIR}/$project
