@@ -20,16 +20,16 @@ select version in "${DXP[@]}"; do
         "7.4.13")
             # 74 USES UPDATES ONLY
             read -p 'Select DXP 7.4 patch level (Update): ' update
-            # until [[ $update =~ ^[+]?[0-9]+$ ]]
-            # do
-            #     echo "Please input the Update #"
-            #     echo
-            #     read -p 'Select DXP $version patch level (Update): ' update
-            # done
-            case ${update#[-+]} in
-                *[!0-9]* | '') echo "ERROR: Please input the Update #:" ;;
-                * ) echo "STATUS: Setting up a $project folder with DXP $version Update $update bundle..." ;;
-            esac
+            until [[ $update =~ ^[+]?[0-9]+$ || 'master' || 'nightly'  ]]
+            do
+                echo "Please input the Update #"
+                echo
+                read -p 'Select DXP $version patch level (Update): ' update
+            done
+            # case ${update#[-+]} in
+            #     *[!0-9]* | '') echo "ERROR: Please input the Update #:" ;;
+            #     * ) echo "STATUS: Setting up a $project folder with DXP $version Update $update bundle..." ;;
+            # esac
 
             echo
             echo "---"
@@ -131,6 +131,47 @@ select version in "${DXP[@]}"; do
                 sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
                 echo "COMPLETE: portal-ext.properties updated with newly made schema!"
             # -- END IF UPDATE
+            elif (( $update == 1 )) || (( $update == 3 )); then
+                # -- START IF SP
+                echo "Patch level is an SP: sp$update"
+                echo "Ok, setting up a $project folder with DXP $version SP$update bundle..."
+                # CHECK IF DIRECTORY EXISTS ALREADY
+                if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version-sp$update/" ]; then
+                    BUNDLED="liferay-dxp-$version-sp$update.${DATE}"
+                    echo "Project Directory $project with Update sp$update folder exists already"
+                    SCHEMA="73_${project}_SP${update}_${DATE}"
+                else
+                    BUNDLED="liferay-dxp-$version-sp$update"
+                    echo "Project Directory $project with Update folder sp$update does not exist yet"
+                    SCHEMA="73_${project}_SP${update}"
+                fi
+
+                echo "Creating Update sp$update folder... /$project/$BUNDLED"
+                echo "---"
+                # UNIVERSAL for UPDATE
+                cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version-sp$update/liferay-dxp-$version.$update-sp$update ${PROJECTDIR}/$project/$BUNDLED
+                if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
+                    echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED"
+                else
+                    echo "FAIL: Folder not created"
+                    echo "DEBUG: Source ${LRDIR}/$version/liferay-dxp-tomcat-$version-sp$update/$BUNDLED"
+                    echo "DEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
+                fi
+                cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
+                cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
+                # MAKE THE MYSQL SCHEMA
+                mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
+                CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
+                if [ $CHECKDB == $SCHEMA ]; then
+                    echo "COMPLETE: Database ${SCHEMA} made!"
+                else
+                    echo "FAIL: Database ${SCHEMA} not created. Please create manually."
+                fi
+                # UPDATE PORTAL-EXT WITH NEW DB
+                sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+                echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+            # -- END IF SP
+            
             else
             # -- START IF FP
                 echo "Patch level is a FP: DXP $version dxp-$update"
