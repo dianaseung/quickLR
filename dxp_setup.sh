@@ -73,12 +73,12 @@ select version in "${DXP[@]}"; do
             elif [ $update == 'nightly' ]; then
                 # liferay-dxp-tomcat-7.4.13.nightly-20221220
                 # CHECK IF DIRECTORY EXISTS ALREADY - append date if so
-                if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.nightly-20221220/" ]; then
-                    BUNDLED="liferay-dxp-$version.nightly-20221220.${DATE}"
+                if [ -d "${PROJECTDIR}/$project/liferay-master-$update-20221220/" ]; then
+                    BUNDLED="liferay-master-$update-20221220.${DATE}"
                     echo "Project Directory $project with $update folder exists already"
                     SCHEMA="74_${project}_nightly_${DATE}"
                 else
-                    BUNDLED="liferay-dxp-$version.nightly-20221220"
+                    BUNDLED="liferay-master-$update-20221220"
                     echo "Project Directory $project with $update folder does not exist yet"
                     SCHEMA="74_${project}_nightly"
                 fi
