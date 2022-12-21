@@ -90,12 +90,17 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 
 ---
 
-# Upcoming Project Features
+# Recent Changes
+- Support for DXP 7.2, 7.1, 7.0 added
+- Support for SP1 and SP3 for DXP 7.3 added
+- Support for master and nightly (DXP 7.4) added
+- Refactored code for improved readability and maintenance
 
-- Support for DXP 7.2, 7.1, 7.0
+
+# Upcoming Planned Features
+- Support for DXP 7.3, 7.2, 7.1 and 7.0 branches
 - Refactor code
 - Auto patching after fix pack placed in patching-tool (Blocker: need to figure out how to run ./patching-tool.sh install from another directory)
-- Add Master/Branch options
 - instructions for .my.cnf setup
 - instructions for MySQL install/setup
 - Potential: set license directory in .bashrc
