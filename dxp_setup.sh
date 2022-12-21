@@ -27,10 +27,6 @@ select version in "${DXP[@]}"; do
                 echo
                 read -p "Select DXP $version patch level (Update): " update
             done
-            # case ${update#[-+]} in
-            #     *[!0-9]* | '') echo "ERROR: Please input the Update #:" ;;
-            #     * ) echo "STATUS: Setting up a $project folder with DXP $version Update $update bundle..." ;;
-            # esac
 
             echo
             echo "---"
@@ -158,13 +154,15 @@ select version in "${DXP[@]}"; do
             ;;
         "7.3.10")
             # CHOOSE A FIX PACK / UPDATE
-            read -p 'Select DXP 7.3 patch level (Update or FP #): ' update
-            until [[ $update =~ ^[+]?[0-9]+$ ]]
+            read -p "Select DXP $version patch level (Update or FP #): " update
+            numcheck='^[0-9]+$'
+            until [[ $update =~ ($numcheck|branch) ]]
             do
-                echo "ERROR: Please input valid Update # (integer only):"
+                echo "ERROR: Invalid Input. Please input the Update/FP # (integer only) or branch"
                 echo
-                read -p 'Select DXP 7.3 patch level (Update or FP #): ' update
+                read -p "Select DXP $version patch level (Update or FP #): " update
             done
+
             echo
             echo "---"
             echo
@@ -315,11 +313,12 @@ select version in "${DXP[@]}"; do
             # 72 71 70 ALL USE FP
             # CHOOSE A FIX PACK
             read -p "Select DXP $version patch level (FP #): " update
-            until [[ $update =~ ^[+]?[0-9]+$ ]]
+            numcheck='^[0-9]+$'
+            until [[ $update =~ ($numcheck|branch) ]]
             do
-                echo "ERROR: Please input valid Fix Pack # (integer only):"
+                echo "ERROR: Invalid Input. Please input the Update/FP # (integer only) or branch"
                 echo
-                read -p "Select DXP $version patch level (FP #): " update
+                read -p "Select DXP $version patch level (Update or FP #): " update
             done
             echo
             echo "---"
