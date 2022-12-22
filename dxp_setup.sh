@@ -14,7 +14,7 @@ echo "SUCCESS: Project created at ${PROJECTDIR}/$project/"
 # Select DXP version
 intro='what dxp version?'
 echo "${intro}"
-DXP=("7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "Exit")
+DXP=("7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "6.2" "6.1" "Exit")
 select version in "${DXP[@]}"; do
     case $version in
         "7.4.13")
@@ -568,7 +568,7 @@ select version in "${DXP[@]}"; do
             break
             ;;
 
-        "Quit")
+        "Exit")
             echo "User requested exit"
             exit
             ;;
