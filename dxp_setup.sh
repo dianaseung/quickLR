@@ -369,23 +369,25 @@ select version in "${DXP[@]}"; do
 
             if [ $update == 'branch' ]; then
                 versiontrim=${version//.10}
-            # -- START IF 73 BRANCH
-                # liferay-portal-tomcat-7.3.x-private-all
+                # -- START IF BRANCH
+                # liferay-portal-tomcat-7.1.x-private-all
                 # liferay-portal-7.3.x-private-all
+                echo "$project Patch level is: DXP $version dxp-$update"
+                SRC="Branch/liferay-portal-tomcat-$versiontrim.x-private-all/liferay-portal-$versiontrim.x-private-all"
+
                 # CHECK IF DIRECTORY EXISTS ALREADY - append date if so
-                if [ -d "${PROJECTDIR}/$project/liferay-$update-20221221/" ]; then
-                    SRC="Branch/liferay-portal-tomcat-$versiontrim.x-private-all/liferay-portal-$versiontrim.x-private-all"
-                    BUNDLED="liferay-$version-$update.${DATE}"
-                    echo "Project Directory $project with $version $update folder exists already"
+                if [ -d "${PROJECTDIR}/$project/liferay-$versiontrim-$update" ]; then
+                    BUNDLED="liferay-$versiontrim-$update.${DATE}"
                     SCHEMA="73_${project}_$update_${DATE}"
+                    echo "Project Directory $project with $version $update folder exists already"
                 else
-                    BUNDLED="liferay-$version-$update"
-                    echo "Project Directory $project with $version $update folder does not exist yet"
+                    BUNDLED="liferay-$versiontrim-$update"
                     SCHEMA="73_${project}_$update"
+                    echo "Project Directory $project with $version $update folder does not exist yet"
                 fi
 
                 # --- UNIVERSAL
-                echo "Creating $version $update folder... /$project/$BUNDLED"
+                echo "Creating $versiontrim $update folder... /$project/$BUNDLED"
                 echo "---"
                 # CREATE FOLDER
                 cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
@@ -411,8 +413,7 @@ select version in "${DXP[@]}"; do
             # -- ENDIF BRANCH
             else
                 versiontrim=${version//.}
-                echo "Patch level is: DXP $version dxp-$update"
-                echo "Ok, setting up a $project folder with DXP $version dxp-$update bundle..."
+                echo "$project Patch level is: DXP $version dxp-$update"
                 SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
                 
                 # CHECK IF DIRECTORY EXISTS ALREADY
