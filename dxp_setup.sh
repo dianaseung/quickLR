@@ -18,6 +18,7 @@ DXP=("7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "Exit")
 select version in "${DXP[@]}"; do
     case $version in
         "7.4.13")
+            versiontrim=${version//.}
             # 7413 USES UPDATES ONLY
             read -p "Select DXP $version patch level (Update): " update
             numcheck='^[0-9]+$'
@@ -153,6 +154,7 @@ select version in "${DXP[@]}"; do
             break
             ;;
         "7.3.10")
+            versiontrim=${version//.}
             # CHOOSE A FIX PACK / UPDATE
             read -p "Select DXP $version patch level (Update or FP #): " update
             numcheck='^[0-9]+$'
@@ -250,7 +252,7 @@ select version in "${DXP[@]}"; do
                 echo "COMPLETE: portal-ext.properties updated with newly made schema!"
             # -- END IF SP
             elif [ $update == 'branch' ]; then
-            # -- START IF BRANCH
+            # -- START IF 73 BRANCH
                 # liferay-portal-tomcat-7.3.x-private-all
                 # liferay-portal-7.3.x-private-all
                 # CHECK IF DIRECTORY EXISTS ALREADY - append date if so
@@ -365,66 +367,206 @@ select version in "${DXP[@]}"; do
             echo "---"
             echo
 
-            echo "Patch level is: DXP $version dxp-$update"
-            echo "Ok, setting up a $project folder with DXP $version dxp-$update bundle..."
-            # CHECK IF DIRECTORY EXISTS ALREADY
-            if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/" ]; then
-                BUNDLED="liferay-dxp-$version.dxp-$update.${DATE}"
-                SCHEMA="73_${project}_dxp${update}_${DATE}"
-                echo "Project Directory $project with Update dxp-$update folder exists already"
+            if [ $update == 'branch' ]; then
+                versiontrim=${version//.10}
+            # -- START IF 73 BRANCH
+                # liferay-portal-tomcat-7.3.x-private-all
+                # liferay-portal-7.3.x-private-all
+                # CHECK IF DIRECTORY EXISTS ALREADY - append date if so
+                if [ -d "${PROJECTDIR}/$project/liferay-$update-20221221/" ]; then
+                    SRC="Branch/liferay-portal-tomcat-$versiontrim.x-private-all/liferay-portal-$versiontrim.x-private-all"
+                    BUNDLED="liferay-$version-$update.${DATE}"
+                    echo "Project Directory $project with $version $update folder exists already"
+                    SCHEMA="73_${project}_$update_${DATE}"
+                else
+                    BUNDLED="liferay-$version-$update"
+                    echo "Project Directory $project with $version $update folder does not exist yet"
+                    SCHEMA="73_${project}_$update"
+                fi
+
+                # --- UNIVERSAL
+                echo "Creating $version $update folder... /$project/$BUNDLED"
+                echo "---"
+                # CREATE FOLDER
+                cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
+                if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
+                    echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED"
+                else
+                    echo "FAIL: Folder not created"
+                    echo "DEBUG: Source ${LRDIR}/Branch/liferay-portal-tomcat-$versiontrim.x-private-all/liferay-portal-$versiontrim.x-private-all"
+                    echo "DEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
+                fi
+                cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
+                # MAKE THE MYSQL SCHEMA
+                mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
+                CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
+                if [ $CHECKDB == $SCHEMA ]; then
+                    echo "COMPLETE: Database ${SCHEMA} made!"
+                else
+                    echo "FAIL: Database ${SCHEMA} not created. Please create manually."
+                fi
+                # UPDATE PORTAL-EXT WITH NEW DB
+                sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+                echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+            # -- ENDIF BRANCH
             else
-                BUNDLED="liferay-dxp-$version.dxp-$update"
-                SCHEMA="73_${project}_dxp${update}"
-                echo "Project Directory $project with Update folder dxp-$update does not exist yet"
+                versiontrim=${version//.}
+                echo "Patch level is: DXP $version dxp-$update"
+                echo "Ok, setting up a $project folder with DXP $version dxp-$update bundle..."
+                SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
+                
+                # CHECK IF DIRECTORY EXISTS ALREADY
+                if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/" ]; then
+                    BUNDLED="liferay-dxp-$version.dxp-$update.${DATE}"
+                    SCHEMA="73_${project}_dxp${update}_${DATE}"
+                    echo "Project Directory $project with Update dxp-$update folder exists already"
+                else
+                    BUNDLED="liferay-dxp-$version.dxp-$update"
+                    SCHEMA="73_${project}_dxp${update}"
+                    echo "Project Directory $project with Update folder dxp-$update does not exist yet"
+                fi
+
+                echo "Creating Update u$update folder... /$project/$BUNDLED"
+                echo "---"
+
+                # UNIVERSAL FOR FP
+                cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
+                if [ -d "${PROJECTDIR}/$project/$BUNDLED" ]; then
+                    echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED"
+                else
+                    echo "FAIL: Folder not created"
+                fi
+
+                # INSTALL ACTIVATION KEY + PORTAL-EXT FILE
+                cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
+                cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
+                echo "COMPLETE: Directory created at ${PROJECTDIR}/$project/$BUNDLED"
+                
+                # COPY FP
+                # liferay-fix-pack-dxp-1-7310
+                FPZIP="liferay-fix-pack-dxp-$update-$versiontrim.zip"
+                echo "Fix Pack sourced from ${LRDIR}/$FPZIP"
+                cp ${LRDIR}/$version/FP/$FPZIP ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
+                if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP ]; then
+                    echo "Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP"
+                else
+                    echo "FAIL: Fix Pack not placed. Please manually install Fix Pack."
+                    xdg-open ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
+                fi
+
+                # TODO - see if I can run patching-tool info from script in another directory
+                #( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ | ./patching-tool.sh info | ./patching-tool.sh install)
+                #echo "${PROJECTDIR}/$project/$BUNDLED/patching-tool/"
+                #cat ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patchinfo.txt| grep installed patchinfo.txt
+                #echo "COMPLETE: Fix Pack dxp-$update installed!"
+
+                # MAKE THE MYSQL SCHEMA
+                mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
+                CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
+                if [ $CHECKDB == $SCHEMA ]; then
+                    echo "COMPLETE: Database ${SCHEMA} made!"
+                else
+                    echo "FAIL: Database ${SCHEMA} not created. Please create manually."
+                fi
+                # UPDATE PORTAL-EXT WITH NEW DB
+                sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+                echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+
+                echo "Work in Progress"
             fi
-
-            echo "Creating Update u$update folder... /$project/$BUNDLED"
-            echo "---"
-
-            # UNIVERSAL FOR FP
-            cp -r ${LRDIR}/$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1 ${PROJECTDIR}/$project/$BUNDLED
-            if [ -d "${PROJECTDIR}/$project/liferay-dxp-$version.dxp-$update/" ]; then
-                echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED"
-            else
-                echo "FAIL: Folder not created"
-            fi
-            cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
-            cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-            echo "COMPLETE: Directory created at ${PROJECTDIR}/$project/$BUNDLED"
-            
-            # COPY FP
-            # liferay-fix-pack-dxp-1-7310
-            echo "version trimmed ${version//.}"
-            versiontrim=${version//.}
-            echo "Fix Pack sourced from ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-$versiontrim.zip"
-            cp ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-$versiontrim.zip ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
-            if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/liferay-fix-pack-dxp-$update-$versiontrim.zip ]; then
-                echo "Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/liferay-fix-pack-dxp-$update-$versiontrim.zip"
-            else
-                echo "FAIL: Fix Pack not placed. Please manually install Fix Pack."
-                xdg-open ${PROJECTDIR}/$project
-            fi
-
-            # TODO - see if I can run patching-tool info from script in another directory
-            #( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ | ./patching-tool.sh info | ./patching-tool.sh install)
-            #echo "${PROJECTDIR}/$project/$BUNDLED/patching-tool/"
-            #cat ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patchinfo.txt| grep installed patchinfo.txt
-            #echo "COMPLETE: Fix Pack dxp-$update installed!"
-
-            # MAKE THE MYSQL SCHEMA
-            mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
-            CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
-            if [ $CHECKDB == $SCHEMA ]; then
-                echo "COMPLETE: Database ${SCHEMA} made!"
-            else
-                echo "FAIL: Database ${SCHEMA} not created. Please create manually."
-            fi
-            # UPDATE PORTAL-EXT WITH NEW DB
-            sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
-            echo "COMPLETE: portal-ext.properties updated with newly made schema!"
-
-            echo "Work in Progress"
+            break
             ;;
+        "6.2" | "6.1")
+            versiontrim=${version//.}
+            # CHOOSE A SP
+            read -p "Select Portal $version patch level (SP #): " update
+            numcheck='^[0-9]+$'
+            until [[ $update =~ ($numcheck|branch) ]]
+            do
+                echo "ERROR: Invalid Input. Please input the SP # (integer only) or branch"
+                echo
+                read -p "Select Portal $version patch level (SP #): " update
+            done
+            echo
+            echo "---"
+            echo
+
+            # consider lookup table to make FP to SP
+            # declare -A fixpacks
+            # fixpacks=( ["SP20"]=154 ["SP19"]=148 ["SP18"]=138)
+
+            if (( $update > 20 )); then
+                echo "Service Pack needed, no fix pack support yet."
+            elif [ $update == 'branch' ]; then
+                # -- START IF 62 61 BRANCH
+                echo "No branch support yet for Portal 6.2 or 6.1"
+                # -- ENDIF BRANCH
+            else
+                # -- START IF FP
+                # liferay-portal-tomcat-6.2-ee-sp3
+                # liferay-portal-6.2-ee-sp3
+                echo "Patch level is Portal $version SP $update"
+                echo "Ok, setting up a $project folder with Portal $version SP $update bundle..."
+                SRC="Branch/liferay-portal-tomcat-$version-ee-sp$update/liferay-portal-$version-ee-sp$update"
+                
+                # CHECK IF DIRECTORY EXISTS ALREADY
+                if [ -d "${PROJECTDIR}/$project/liferay-portal-tomcat-$version.ee-sp$update/" ]; then
+                    BUNDLED="liferay-portal-tomcat-$version.ee-sp$update.${DATE}"
+                    SCHEMA="${versiontrim}_${project}_SP${update}_${DATE}"
+                    echo "Project Directory $project with $version SP $update folder exists already"
+                else
+                    BUNDLED="liferay-portal-tomcat-$version.ee-sp$update"
+                    SCHEMA="${versiontrim}_${project}_SP${update}"
+                    echo "Project Directory $project with $version SP $update does not exist yet"
+                fi
+
+                echo "Creating Update u$update folder... /$project/$BUNDLED"
+                echo "---"
+                # UNIVERSAL FOR FP
+                cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
+                if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
+                    echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED"
+                else
+                    echo "FAIL: Folder not created"
+                fi
+
+                cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
+                cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
+                echo "COMPLETE: Directory created at ${PROJECTDIR}/$project/$BUNDLED"
+                
+                # ! COPY FP - NO FP SUPPORT YET
+                # liferay-fix-pack-portal-173-6210
+                # echo "Fix Pack sourced from ${LRDIR}/$version/FP/liferay-fix-pack-portal-$update-${versiontrim}10.zip"
+                # cp ${LRDIR}/$version/FP/liferay-fix-pack-portal-$update-${versiontrim}10.zip ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
+                # if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/liferay-fix-pack-dxp-$update-7310.zip ]; then
+                #     echo "Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/liferay-fix-pack-dxp-$update-7310.zip"
+                # else
+                #     echo "FAIL: Fix Pack not placed. Please manually install Fix Pack."
+                #     xdg-open ${PROJECTDIR}/$project
+                # fi
+                
+                # TODO - see if I can run patching-tool info from script in another directory
+                #( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ | ./patching-tool.sh info | ./patching-tool.sh install)
+                #echo "${PROJECTDIR}/$project/$BUNDLED/patching-tool/"
+                #cat ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patchinfo.txt| grep installed patchinfo.txt
+                #echo "COMPLETE: Fix Pack dxp-$update installed!"
+
+                # MAKE THE MYSQL SCHEMA
+                mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
+                CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
+                if [ $CHECKDB == $SCHEMA ]; then
+                    echo "COMPLETE: Database ${SCHEMA} made!"
+                else
+                    echo "FAIL: Database ${SCHEMA} not created. Please create manually."
+                fi
+                # UPDATE PORTAL-EXT WITH NEW DB
+                sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+                echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+            # -- END IF FP
+            fi
+            break
+            ;;
+
         "Quit")
             echo "User requested exit"
             exit
