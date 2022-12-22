@@ -249,6 +249,47 @@ select version in "${DXP[@]}"; do
                 sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
                 echo "COMPLETE: portal-ext.properties updated with newly made schema!"
             # -- END IF SP
+            elif [ $update == 'branch' ]; then
+            # -- START IF BRANCH
+                # liferay-portal-tomcat-7.3.x-private-all
+                # liferay-portal-7.3.x-private-all
+                # CHECK IF DIRECTORY EXISTS ALREADY - append date if so
+                if [ -d "${PROJECTDIR}/$project/liferay-$update-20221221/" ]; then
+                    BUNDLED="liferay-$version-$update.${DATE}"
+                    echo "Project Directory $project with $version $update folder exists already"
+                    SCHEMA="73_${project}_$update_${DATE}"
+                else
+                    BUNDLED="liferay-$version-$update"
+                    echo "Project Directory $project with $version $update folder does not exist yet"
+                    SCHEMA="73_${project}_$update"
+                fi
+
+                # --- UNIVERSAL
+                echo "Creating $version $update folder... /$project/$BUNDLED"
+                echo "---"
+                # CREATE FOLDER
+                cp -r ${LRDIR}/Branch/liferay-portal-tomcat-7.3.x-private-all/liferay-portal-7.3.x-private-all ${PROJECTDIR}/$project/$BUNDLED
+                if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
+                    echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED"
+                else
+                    echo "FAIL: Folder not created"
+                    echo "DEBUG: Source ${LRDIR}/Branch/liferay-portal-tomcat-7.3.x-private-all/liferay-portal-7.3.x-private-all"
+                    echo "DEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
+                fi
+                cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
+                cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
+                # MAKE THE MYSQL SCHEMA
+                mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
+                CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
+                if [ $CHECKDB == $SCHEMA ]; then
+                    echo "COMPLETE: Database ${SCHEMA} made!"
+                else
+                    echo "FAIL: Database ${SCHEMA} not created. Please create manually."
+                fi
+                # UPDATE PORTAL-EXT WITH NEW DB
+                sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+                echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+            # -- ENDIF BRANCH
             else
             # -- START IF FP
                 echo "Patch level is a FP: DXP $version dxp-$update"
