@@ -92,18 +92,25 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 
 # Recent Changes
 - Support for DXP 7.2, 7.1, 7.0 added
-- Support for SP1 and SP3 for DXP 7.3 added
-- Support for master and nightly (DXP 7.4) added
-- Refactored code for improved readability and maintenance
+- Support for SP1 and SP3 for DXP 7.3 added (12/16/2022)
+- Refactored code for improved readability and maintenance (12/20/2022)
+- Support for master and nightly (DXP 7.4) added (12/21/2022)
+- Support for DXP 7.3, 7.2, 7.1 and 7.0 branches added (12/22/2022)
+- Support for Portal 6.2 and 6.1 added - SP ONLY (12/22/2022)
 
-
-# Upcoming Planned Features
-- Support for DXP 7.3, 7.2, 7.1 and 7.0 branches
-- Refactor code
-- Auto patching after fix pack placed in patching-tool (Blocker: need to figure out how to run ./patching-tool.sh install from another directory)
-- instructions for .my.cnf setup
-- instructions for MySQL install/setup
+# Upcoming Planned Features for v1.0
+- Check for latest patching-tool available and include in any new bundle
+- DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root)
+- Update README instructions for more explicit setup instructions:
+    - instructions for .my.cnf setup
+    - instructions for MySQL install/setup
 - Potential: set license directory in .bashrc
+
+# Possible v2.0 Features
+- Refactor code
+- Support for Portal 6.2 and 6.1 - FP support (currently SP support only)
+- Separate script to auto-check and auto-move new Liferay bundle (Update, SP, Fixpack) downloads to designated Liferay folder
+- Auto patching after fix pack placed in patching-tool (Blocker: need to figure out how to run ./patching-tool.sh install from another directory)
 
 
 ## Next Project Ideas
