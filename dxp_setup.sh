@@ -400,7 +400,7 @@ select version in "${DXP[@]}"; do
                 if [ -d "${PROJECTDIR}/$project/$BUNDLED" ]; then
                     # INSTALL ACTIVATION KEY + PORTAL-EXT FILE
                     cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
-                    cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
+                    cp ${LRDIR}/$version/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
                     echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED - License and Portal-ext placed"
                     # COPY FP
                     # liferay-fix-pack-dxp-1-7310
