@@ -97,9 +97,18 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 - Support for master and nightly (DXP 7.4) added (12/21/2022)
 - Support for DXP 7.3, 7.2, 7.1 and 7.0 branches added (12/22/2022)
 - Support for Portal 6.2 and 6.1 added - SP ONLY (12/22/2022)
+- Updated 7.0-7.2 to cp portal-ext.properties file from version dir ($LRDIR/$version/) instead of a central generalized porta-ext.properties file from $LRDIR, to account for different database settings, especially for database (MySQL) (2/22/2023) 
+- Auto install Fix Packs (for both 7.3 and 7.0-7.2) & run lrclean (clear temp folders) (2/22/2023) 
+- Auto start bundle from tomcat dir (2/22/2023) -- WIP: need to fix tomcat wildcard
+
+# Minor Changes Planned
+- Update sample portal-ext.properties to allow for quicker testing setup (disable TOS, setup wiz, pw change, etc)
+- Update sample recommended folder structure zip
 
 # Upcoming Planned Features for v1.0
 - Check for latest patching-tool available and include in any new bundle
+    Plan: rm dir -> cp dir + grep highest number dir
+    (Phase 1: hardcode cp patching-tool folder dir --> Phase 2: grep highest number dir)
 - DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root)
 - Update README instructions for more explicit setup instructions:
     - instructions for .my.cnf setup
@@ -107,7 +116,7 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 - Potential: set license directory in .bashrc
 
 # Possible v2.0 Features
-- Refactor code
+- Refactor code (figure out function scoping and usage in bash)
 - Support for Portal 6.2 and 6.1 - FP support (currently SP support only)
 - Separate script to auto-check and auto-move new Liferay bundle (Update, SP, Fixpack) downloads to designated Liferay folder
 - Auto patching after fix pack placed in patching-tool (Blocker: need to figure out how to run ./patching-tool.sh install from another directory)
