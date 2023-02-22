@@ -14,7 +14,7 @@ echo "SUCCESS: Project created at ${PROJECTDIR}/$project/"
 # Select DXP version
 intro='Select Liferay version:'
 echo "${intro}"
-DXP=("7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "6.2" "6.1" "Exit")
+DXP=("7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "6.2" "6.1" "Config" "Exit")
 select version in "${DXP[@]}"; do
     case $version in
         "7.4.13")
@@ -519,6 +519,21 @@ select version in "${DXP[@]}"; do
             fi
             break
             ;;
+        "Config")
+            mysqlserverlist=mysqlserverlist.txt
+            # Send list of installed DBDeployer servers to .txt
+            # TODO: check if dbdeployer; if yes, use SANDBOX_HOME / if no, 3306?
+            ls '/home/dia/Liferay/MySQL/servers/' > $mysqlserverlist
+            # Define array of available MySQL servers available to choose from  
+            mysqlarray=(`cat "$mysqlserverlist"`)
+
+            select mysqlserver in "${mysqlarray[@]}"; do
+                sed -i "s!localhost:*/SCHEMA!$mysqlserver!g" ${LRDIR}/portal-ext.properties
+                echo "MySQL Server set at localhost:${mysqlserver}"
+                break
+            done
+            exit
+            ;;
         "Exit")
             echo "User requested exit"
             exit
@@ -533,5 +548,5 @@ echo
 # TODO: If directory exists, success msg + xdg-open; else error msg 
 echo "SUCCESS: Finished setup of DXP $version ${update} folder for $project"
 xdg-open ${PROJECTDIR}/$project
-( cd ${PROJECTDIR}/$project/$BUNDLED/ && lrclean)
-( cd ${PROJECTDIR}/$project/$BUNDLED/tomcat-*/bin && ./catalina.sh run)
+( cd ${PROJECTDIR}/$project/$BUNDLED && lrclean)
+( cd ${PROJECTDIR}/$project/$BUNDLED/tomcat-*/bin && ./catalina.sh run -e)
