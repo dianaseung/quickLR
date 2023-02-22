@@ -91,15 +91,15 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 ---
 
 # Recent Changes
-- Support for DXP 7.2, 7.1, 7.0 added
-- Support for SP1 and SP3 for DXP 7.3 added (12/16/2022)
-- Refactored code for improved readability and maintenance (12/20/2022)
-- Support for master and nightly (DXP 7.4) added (12/21/2022)
-- Support for DXP 7.3, 7.2, 7.1 and 7.0 branches added (12/22/2022)
-- Support for Portal 6.2 and 6.1 added - SP ONLY (12/22/2022)
-- Updated 7.0-7.2 to cp portal-ext.properties file from version dir ($LRDIR/$version/) instead of a central generalized porta-ext.properties file from $LRDIR, to account for different database settings, especially for database (MySQL) (2/22/2023) 
-- Auto install Fix Packs (for both 7.3 and 7.0-7.2) & run lrclean (clear temp folders) (2/22/2023) 
 - Auto start bundle from tomcat dir (2/22/2023) -- WIP: need to fix tomcat wildcard
+- Auto install Fix Packs (for both 7.3 and 7.0-7.2) & run lrclean (clear temp folders) (2/22/2023) 
+- Updated 7.0-7.2 to cp portal-ext.properties file from version dir ($LRDIR/$version/) instead of a central generalized porta-ext.properties file from $LRDIR, to account for different database settings, especially for database (MySQL) (2/22/2023) 
+- Support for Portal 6.2 and 6.1 added - SP ONLY (12/22/2022)
+- Support for DXP 7.3, 7.2, 7.1 and 7.0 branches added (12/22/2022)
+- Support for master and nightly (DXP 7.4) added (12/21/2022)
+- Refactored code for improved readability and maintenance (12/20/2022)
+- Support for SP1 and SP3 for DXP 7.3 added (12/16/2022)
+- Support for DXP 7.2, 7.1, 7.0 added
 
 # Minor Changes Planned
 - Update sample portal-ext.properties to allow for quicker testing setup (disable TOS, setup wiz, pw change, etc)
