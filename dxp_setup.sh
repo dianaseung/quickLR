@@ -290,7 +290,8 @@ select version in "${DXP[@]}"; do
                     if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP ]; then
                         echo "Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP"
                         ( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ && ./patching-tool.sh install && ./patching-tool.sh info)
-                        echo "COMPLETE: Fix Pack dxp-$update installed!"
+                        ( cd ${PROJECTDIR}/$project/$BUNDLED && lrclean)
+                        echo "SUCCESS: Fix Pack dxp-$update install completed! Temp Folders cleaned"
                         # xdg-open ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
                     else
                         echo "FAIL: Fix Pack not placed. Please manually install Fix Pack."
@@ -399,14 +400,14 @@ select version in "${DXP[@]}"; do
                     cp ${LRDIR}/$version/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
                     echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED - License and Portal-ext placed"
                     # COPY FP
-                    # liferay-fix-pack-dxp-1-7310
                     FPZIP="liferay-fix-pack-dxp-$update-$versiontrim.zip"
                     echo "Fix Pack sourced from ${LRDIR}/$FPZIP"
                     cp ${LRDIR}/$version/FP/$FPZIP ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
                     if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP ]; then
                         echo "Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP"
                         ( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ && ./patching-tool.sh install && ./patching-tool.sh info)
-                        echo "COMPLETE: Fix Pack dxp-$update installed!"
+                        ( cd ${PROJECTDIR}/$project/$BUNDLED && lrclean)
+                        echo "SUCCESS: Fix Pack dxp-$update install completed! Temp Folders cleaned"
                         # xdg-open ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
                     else
                         echo "FAIL: Fix Pack not placed. Please manually install Fix Pack."
@@ -544,5 +545,4 @@ echo
 # TODO: If directory exists, success msg + xdg-open; else error msg 
 echo "SUCCESS: Finished setup of DXP $version ${update} folder for $project"
 # xdg-open ${PROJECTDIR}/$project
-( cd ${PROJECTDIR}/$project/$BUNDLED && lrclean)
 cd ${PROJECTDIR}/$project/$BUNDLED/tomcat*/bin/ && ./catalina.sh run
