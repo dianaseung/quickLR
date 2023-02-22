@@ -90,40 +90,33 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 
 ---
 
-## Recent Changes
-- 2/22/2023 - Auto start bundle from tomcat dir  **WIP: need to fix tomcat wildcard**
-- 2/22/2023 - Auto install Fix Packs (for both 7.3 and 7.0-7.2) & run lrclean function (clear temp folders)
-- 2/22/2023 - Updated 7.0-7.2 to cp portal-ext.properties file from version dir ($LRDIR/$version/) instead of a central generalized porta-ext.properties file from $LRDIR, to account for different database settings, especially for database (MySQL)
-- 12/22/2022 - Support for Portal 6.2 and 6.1 added - SP ONLY
-- 12/22/2022 - Support for DXP 7.3, 7.2, 7.1 and 7.0 branches added
-- 12/21/2022 - Support for master and nightly (DXP 7.4) added
-- 12/20/2022 - Refactored code for improved readability and maintenance
-- 12/16/2022 - Support for SP1 and SP3 for DXP 7.3 added
+## Recent Updates
+- 2/22/23 - Auto start bundle from tomcat dir  **WIP: need to fix tomcat wildcard**
+- 2/22/23 - Auto install Fix Packs (for both 7.3 and 7.0-7.2) & run lrclean function (clear temp folders)
+- 2/22/23 - Updated 7.0-7.2 to cp portal-ext.properties file from version dir ($LRDIR/$version/) instead of a central generalized porta-ext.properties file from $LRDIR, to account for different database settings, especially for database (MySQL)
+- 12/22/22 - Support for Portal 6.2 and 6.1 added - SP ONLY
+- 12/22/22 - Support for DXP 7.3, 7.2, 7.1 and 7.0 branches added
+- 12/21/22 - Support for master and nightly (DXP 7.4) added
+- 12/20/22 - Refactored code for improved readability and maintenance
+- 12/16/22 - Support for SP1 and SP3 for DXP 7.3 added
 - Support for DXP 7.2, 7.1, 7.0 added
+
+## Upcoming Planned v1.0 Features
+- Check for latest patching-tool available and include in any new bundle. Plan: rm dir -> cp dir + grep highest number dir (Phase 1: hardcode cp patching-tool folder dir --> Phase 2: grep highest number dir)
+- DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root)
+- Update README instructions for more explicit setup instructions:
+    - instructions for .my.cnf setup
+    - instructions for MySQL install/setup
+- Auto patching after fix pack placed in patching-tool (Blocker: need to figure out how to run ./patching-tool.sh install from another directory)
+- Potential: set license directory in .bashrc
 
 ### Minor Changes Planned
 - Update sample portal-ext.properties to allow for quicker testing setup (disable TOS, setup wiz, pw change, etc)
 - Update sample recommended folder structure zip
 - Link to lrclean setup
 
-## Upcoming Planned Features for v1.0
-- Check for latest patching-tool available and include in any new bundle
-    Plan: rm dir -> cp dir + grep highest number dir
-    (Phase 1: hardcode cp patching-tool folder dir --> Phase 2: grep highest number dir)
-- DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root)
-- Update README instructions for more explicit setup instructions:
-    - instructions for .my.cnf setup
-    - instructions for MySQL install/setup
-- Potential: set license directory in .bashrc
-
 ## Possible v2.0 Features
 - Refactor code (figure out function scoping and usage in bash)
-- Support for Portal 6.2 and 6.1 - FP support (currently SP support only)
-- Separate script to auto-check and auto-move new Liferay bundle (Update, SP, Fixpack) downloads to designated Liferay folder
-- Auto patching after fix pack placed in patching-tool (Blocker: need to figure out how to run ./patching-tool.sh install from another directory)
-
-
-## Next Project Ideas
-
-- cleanup script to delete database and delete (choose either whole project code or individual bundle)
-- automated script to rename and move Liferay .tar.gz files to the appropriate `Liferay/DXP/` directory upon download to Downloads folder
+- Fix Pack Support for Portal 6.2 and 6.1 (currently SP support only)
+- Automated script to check, move and rename new Liferay downloads (Update, SP, Fixpack) to appropriate Liferay folder upon download to Downloads folder
+- Cleanup script to automate deleting database and bundle(s) (either by whole project code or individual bundle)
