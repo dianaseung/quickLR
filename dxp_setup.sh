@@ -543,6 +543,6 @@ echo "---"
 echo
 # TODO: If directory exists, success msg + xdg-open; else error msg 
 echo "SUCCESS: Finished setup of DXP $version ${update} folder for $project"
-xdg-open ${PROJECTDIR}/$project
+# xdg-open ${PROJECTDIR}/$project
 ( cd ${PROJECTDIR}/$project/$BUNDLED && lrclean)
-( cd ${PROJECTDIR}/$project/$BUNDLED/tomcat-*/bin && ./catalina.sh run -e)
+cd ${PROJECTDIR}/$project/$BUNDLED/tomcat*/bin/ && ./catalina.sh run
