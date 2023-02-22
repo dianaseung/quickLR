@@ -284,22 +284,18 @@ select version in "${DXP[@]}"; do
                     echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED - License and Portal-ext placed"
 
                     # COPY FP
-                    # liferay-fix-pack-dxp-1-7310
-                    echo "Fix Pack sourced from ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip"
-                    cp ${LRDIR}/$version/FP/liferay-fix-pack-dxp-$update-7310.zip ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
-                    if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/liferay-fix-pack-dxp-$update-7310.zip ]; then
-                        echo "Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/liferay-fix-pack-dxp-$update-7310.zip"
-                        xdg-open ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
+                    FPZIP="liferay-fix-pack-dxp-$update-$versiontrim.zip"
+                    echo "Fix Pack sourced from ${LRDIR}/$FPZIP"
+                    cp ${LRDIR}/$version/FP/$FPZIP ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
+                    if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP ]; then
+                        echo "Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP"
+                        ( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ && ./patching-tool.sh install && ./patching-tool.sh info)
+                        echo "COMPLETE: Fix Pack dxp-$update installed!"
+                        # xdg-open ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
                     else
                         echo "FAIL: Fix Pack not placed. Please manually install Fix Pack."
                         xdg-open ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
                     fi
-                    
-                    # TODO - see if I can run patching-tool info from script in another directory
-                    #( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ | ./patching-tool.sh info | ./patching-tool.sh install)
-                    #echo "${PROJECTDIR}/$project/$BUNDLED/patching-tool/"
-                    #cat ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patchinfo.txt| grep installed patchinfo.txt
-                    #echo "COMPLETE: Fix Pack dxp-$update installed!"
 
                     # MAKE THE MYSQL SCHEMA
                     mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
