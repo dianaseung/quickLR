@@ -103,7 +103,7 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 
 ## Upcoming Planned v1.0 Features
 - Check for latest patching-tool available and include in any new bundle. Plan: rm dir -> cp dir + grep highest number dir (Phase 1: hardcode cp patching-tool folder dir --> Phase 2: grep highest number dir)
-- DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root)
+- DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
 - Update README instructions for more explicit setup instructions:
     - instructions for .my.cnf setup
     - instructions for MySQL install/setup
