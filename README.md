@@ -108,6 +108,7 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 - DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
 
 ### Minor Changes Planned
+- Refactor - Set var (bundleType) to check if update/SP/FP/branch or master; Merge createBundle/createBranch/createFPBundle into one function and have components run conditionally based on bundleType 
 - Update README instructions for more explicit setup instructions (.my.cnf setup, DBDeployer/MySQL install/setup)
 - Update sample portal-ext.properties to allow for quicker testing setup (disable TOS, setup wiz, pw change, etc)
 - Update sample recommended folder structure zip
