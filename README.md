@@ -92,7 +92,9 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 ---
 
 ## Recent Updates
-- 2/22/23 - Auto start bundle from tomcat dir  **WIP: need to fix tomcat wildcard**
+- 4/8/23 - Refactor (functions) - originally planned as a 2.0 rework
+- 4/8/23 - Updates to latest patching-tool when installing bundle - P1: Currently hardcoded to cp specific patching-tool version based on DXP version
+- 2/22/23 - Auto start bundle from tomcat dir
 - 2/22/23 - Auto install Fix Packs (for both 7.3 and 7.0-7.2) & run lrclean function (clear temp folders)
 - 2/22/23 - Updated 7.0-7.2 to cp portal-ext.properties file from version dir ($LRDIR/$version/) instead of a central generalized porta-ext.properties file from $LRDIR, to account for different database settings, especially for database (MySQL)
 - 12/22/22 - Support for Portal 6.2 and 6.1 added - SP ONLY
@@ -103,21 +105,18 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 - Support for DXP 7.2, 7.1, 7.0 added
 
 ## Upcoming Planned v1.0 Features
-- Check for latest patching-tool available and include in any new bundle. Plan: rm dir -> cp dir + grep highest number dir (Phase 1: hardcode cp patching-tool folder dir --> Phase 2: grep highest number dir)
 - DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
-- Update README instructions for more explicit setup instructions:
-    - instructions for .my.cnf setup
-    - instructions for MySQL install/setup
-- Auto patching after fix pack placed in patching-tool (Blocker: need to figure out how to run ./patching-tool.sh install from another directory)
-- Potential: set license directory in .bashrc
 
 ### Minor Changes Planned
+- Update README instructions for more explicit setup instructions (.my.cnf setup, DBDeployer/MySQL install/setup)
 - Update sample portal-ext.properties to allow for quicker testing setup (disable TOS, setup wiz, pw change, etc)
 - Update sample recommended folder structure zip
-- Link to lrclean setup
+- Link to lrclean setup confluence doc
+- Potential: set license, branch directory in .bashrc
 
 ## Possible v2.0 Features
-- Refactor code (figure out function scoping and usage in bash)
+- Update to latest patching-tool available with any new bundle - P2: grep highest number dir
+- Second bundle setup (update server.xml file ports from 8xxx to 9xxx, cp com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config file to /osgi/configs/) - Note: writing the functionality is easy, but need to figure out logic for how to add to script menu (maybe need to flesh out the config menu)
 - Fix Pack Support for Portal 6.2 and 6.1 (currently SP support only)
 - Automated script to check, move and rename new Liferay downloads (Update, SP, Fixpack) to appropriate Liferay folder upon download to Downloads folder
 - Cleanup script to automate deleting database and bundle(s) (either by whole project code or individual bundle)
