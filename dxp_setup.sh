@@ -3,13 +3,14 @@
 # source /home/dia/Downloads/Liferay/setenv.sh | tee ./log.dat
 # GLOBAL VARIABLES
 DATE=$(date +%Y%m%d)
+# TODO: Remove debugging checks
 echo "CHECK: LRDIR ${LRDIR}"
 echo "CHECK: PROJECTDIR ${PROJECTDIR}"
 
 # NAME THE PROJECT
 read -p 'Project Code: ' project
 mkdir -p ${PROJECTDIR}/$project/
-echo "SUCCESS: Project created at ${PROJECTDIR}/$project/"
+echo -e "SUCCESS: Project created at ${PROJECTDIR}/$project/\n---\n"
 
 # MAKING FUNCTIONS FOR REUSABLE CODE
 checkDir () {
@@ -17,9 +18,9 @@ checkDir () {
     if [ -d "${PROJECTDIR}/${project}/${BUNDLED}" ]; then
         BUNDLED="${BUNDLED}.${DATE}"
         SCHEMA="${SCHEMA}_${DATE}"
-        echo "Project Directory $project with Update u$update folder exists already"
+        echo "Project $project with Update u$update folder already exists! Appending date..."
     else
-        echo "Project Directory $project with Update folder u$update does not exist yet"
+        echo "Project $project with Update u$update folder does not exist yet..."
     fi
 }
 
@@ -32,15 +33,15 @@ updatePatchingTool () {
     if [[ $version == "7.4.13" ]] || [[ $version == "7.3.10" ]]; then
         # v3.0.37 PATCHING TOOL
         cp -rf ${LRDIR}/Patching/patching-tool-3.0.37/patching-tool/ ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
-        echo "Updated the Patching Tool folder to 3.0.37"
+        echo "SUCCESS: Updated the Patching Tool folder to 3.0.37"
     elif [[ $version == "7.2.10" ]]; then
         # v2.0.16 PATCHING TOOL
         cp -r ${LRDIR}/Patching/patching-tool-2.0.16/patching-tool/ ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
-        echo "Updated the Patching Tool folder to 2.0.16"
+        echo "SUCCESS: Updated the Patching Tool folder to 2.0.16"
     else
         # v1.0.23 PATCHING TOOL
         cp -r ${LRDIR}/Patching/patching-tool-1.0.23/patching-tool/ ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
-        echo "Updated the Patching Tool folder to 1.0.23"
+        echo "SUCCESS: Updated the Patching Tool folder to 1.0.23"
     fi
 }
 
@@ -49,7 +50,7 @@ createDB () {
     mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
     CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
     if [ $CHECKDB == $SCHEMA ]; then
-        echo "COMPLETE: Database ${SCHEMA} made!"
+        echo "SUCCESS: Database ${SCHEMA} made!"
     else
         echo "FAIL: Database ${SCHEMA} not created. Please create manually."
     fi
@@ -58,19 +59,19 @@ createDB () {
 createBranch () {
     # No License placed 
     checkDir
-    echo -e "Creating DXP $version $update folder... /$project/$BUNDLED\n---"
     # CREATE FOLDER
     cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
+    echo "SUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
     if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
         # INSTALL LICENSE + PORTAL-EXT PROPERTIES
-        cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
+        # cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
         cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED - License and Portal-ext placed"
-        updatePatchingTool
+        # echo "SUCCESS: License and Portal-ext placed"
+        #updatePatchingTool
         createDB
         # UPDATE PORTAL-EXT WITH NEW DB
         sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
-        echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+        echo "SUCCESS: portal-ext.properties updated with $SCHEMA"
     else
         echo "FAIL: Folder not created"
         echo "DEBUG: Source ${LRDIR}/${SRC}"
@@ -81,19 +82,19 @@ createBranch () {
 createBundle () {
     # This should work for both Updates and SP 
     checkDir
-    echo -e "Creating DXP $version $update folder... /$project/$BUNDLED\n---"
     # CREATE FOLDER
     cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
+    echo "SUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
     if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
         # INSTALL LICENSE + PORTAL-EXT PROPERTIES
         cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
         cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED - License and Portal-ext placed"
+        echo "SUCCESS: License and Portal-ext placed"
         updatePatchingTool
         createDB
         # UPDATE PORTAL-EXT WITH NEW DB
         sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
-        echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+        echo "SUCCESS: portal-ext.properties updated with $SCHEMA"
     else
         echo "FAIL: Folder not created"
         echo "DEBUG: Source ${LRDIR}/${SRC}"
@@ -103,18 +104,18 @@ createBundle () {
 
 createFPBundle () {
     checkDir
-    echo -e "Creating DXP $version u$update folder... /$project/$BUNDLED\n---"
     # CREATE FOLDER
     cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
+    echo "SUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
     if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
         # INSTALL LICENSE + PORTAL-EXT PROPERTIES
         cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
         cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        echo "SUCCESS: Folder created at ${PROJECTDIR}/$project/$BUNDLED - License and Portal-ext placed"
+        echo "SUCCESS: License and Portal-ext placed"
         updatePatchingTool
         # COPY FP + PATCH + CLEAN TEMP FILES
         FPZIP="liferay-fix-pack-dxp-$update-$versiontrim.zip"
-        echo "Fix Pack sourced from ${LRDIR}/$FPZIP"
+        echo "DEBUG: Fix Pack sourced from ${LRDIR}/$FPZIP"
         cp ${LRDIR}/$version/FP/$FPZIP ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
         # If FP copied properly, then install 
         if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP ]; then
@@ -130,7 +131,7 @@ createFPBundle () {
         createDB
         # UPDATE PORTAL-EXT WITH NEW DB
         sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
-        echo "COMPLETE: portal-ext.properties updated with newly made schema!"
+        echo "SUCCESS: portal-ext.properties updated with $SCHEMA"
     else
         echo "FAIL: Folder not created"
         echo "DEBUG: Source ${LRDIR}/${SRC}"
@@ -139,8 +140,7 @@ createFPBundle () {
 }
 
 # Select DXP version
-intro='Select Liferay version:'
-echo "${intro}"
+echo -e "\n---\nChoose Liferay version to install:"
 DXP=("7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "6.2" "6.1" "Config" "Exit")
 select version in "${DXP[@]}"; do
     case $version in
@@ -304,9 +304,9 @@ select version in "${DXP[@]}"; do
 done
 
 echo -e "\n---\n"
-echo "SUCCESS: Finished setup of DXP $version ${update} folder for $project"
+echo "SUCCESS: Finished setup of ${PROJECTDIR}/$project/$BUNDLED"
 # START BUNDLE OR EXIT SCRIPT
-read -rsn1 -p"Press any key to start $project bundle... or Ctrl-C to exit";echo
+read -rsn1 -p"Press any key to start $BUNDLED bundle... or Ctrl-C to exit";echo
 cd ${PROJECTDIR}/$project/$BUNDLED/tomcat*/bin/ && ./catalina.sh run
 # [COMMENTED OUT FOR NOW] TODO: If exit and directory exists, open the folder the project was made
 # xdg-open ${PROJECTDIR}/$project
