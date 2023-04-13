@@ -156,7 +156,7 @@ select version in "${DXP[@]}"; do
             echo -e "\n---\n"
             if [ $update == 'master' ]; then
                 # TODO: Need to update master
-                SRC="Branch/liferay-portal-$update-20221221/liferay-portal-$update-all"
+                SRC="Branch/liferay-portal-tomcat-master-all/liferay-portal-master-all"
                 BUNDLED="liferay-dxp-$version-$update"
                 SCHEMA="${versiontrimx}_${project}_$update"
                 createBundle
