@@ -90,21 +90,21 @@ Replace `[liferay_directory]`, `[project_directory]`, `[username]` and `[dbdeplo
 
 ### Setup: Install mysql
 See for more installation detail: https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-20-04
-# Install the mysql-server package
+- Install the mysql-server package
 ```
 sudo apt install mysql-server
 ```
-# Ensure the server is running
+- Ensure the server is running
 ```
 sudo systemctl start mysql.service
 ```
-# 
+
 
 ----
 
 ### Setup: Edit .my.cnf for quick SQL setup
 See for more configuration detail: https://www.inmotionhosting.com/support/server/databases/edit-mysql-my-cnf/
-Add user/password to .my.cnf file to allow script to create MySQL database:
+- Add user/password to .my.cnf file to allow script to create MySQL database:
 
 ```
 user=
