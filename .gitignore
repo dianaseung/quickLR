@@ -8,3 +8,6 @@
 # LOGS
 *.dat
 *.log
+
+# SPECIFIC
+mysqlserverlist.txt
