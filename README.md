@@ -81,8 +81,10 @@ Use `nano ~/.bashrc`to set the following environmental variables:
 # Environment Variables for quickLR usage (github.com/dianaseung/quickLR)
 export LRDIR=[liferay_directory]
 export PROJECTDIR=[project_directory]
+export MYSQLUSER=[username]
+export DBDEPLOYER_HOME=[dbdeployer_directory]
 ```
-Replace `[liferay_directory]` and `[project_directory]` with the appropriate paths.
+Replace `[liferay_directory]`, `[project_directory]`, `[username]` and `[dbdeployer_directory]` with the appropriate values.
 
 ---
 
