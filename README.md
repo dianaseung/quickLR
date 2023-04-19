@@ -11,11 +11,13 @@ Linux bash script to help Customer Support Engineers to quickly setup basic Life
 ### Functionality
 
 This bash script (Linux) quickly sets up a basic Liferay Tomcat bundle and environment for Liferay Customer Support work.
+Alternative to using Docker compose to setup a standard Liferay bundle
+
 What does this script do?
 1. Creates a Project folder with Project Code (i.e. CHICAGOLC)
 2. Copies DXP bundle to Project
 3. Puts a copy of activation xml license and portal-ext.properties to DXP bundle
-4. If Fix Pack, places Fix Pack in patching folder, auto-installs FP and clears temp folders. (xdg-open if fail) SP and Updates don't need patching.
+4. If Fix Pack needed, places Fix Pack in patching folder, auto-installs FP and clears temp folders. (xdg-open if fail) SP and Updates don't need patching.
 4. Creates a MySQL database
 5. Updates portal-ext.properties with newly created MySQL DB
 6. Auto starts Tomcat bundle through ./catalina.sh run
@@ -84,10 +86,28 @@ Replace `[liferay_directory]` and `[project_directory]` with the appropriate pat
 
 ---
 
+### Setup: Install mysql
+See for more installation detail: https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-20-04
+# Install the mysql-server package
+```
+sudo apt install mysql-server
+```
+# Ensure the server is running
+```
+sudo systemctl start mysql.service
+```
+# 
+
+----
+
 ### Setup: Edit .my.cnf for quick SQL setup
+See for more configuration detail: https://www.inmotionhosting.com/support/server/databases/edit-mysql-my-cnf/
+Add user/password to .my.cnf file to allow script to create MySQL database:
 
-
-###
+```
+user=
+password=
+```
 
 ---
 
