@@ -1,8 +1,7 @@
 #!/bin/bash
 # for DXP 7.4 setup automation
-# source /home/dia/Downloads/Liferay/setenv.sh | tee ./log.dat
 # GLOBAL VARIABLES
-DATE=$(date +%Y%m%d)
+DATE=$(date +%y%m%d%H%M)
 # TODO: Remove debugging checks
 echo "CHECK: LRDIR ${LRDIR}"
 echo "CHECK: PROJECTDIR ${PROJECTDIR}"
@@ -12,9 +11,12 @@ read -p 'Project Code: ' project
 mkdir -p ${PROJECTDIR}/$project/
 echo -e "SUCCESS: Project created at ${PROJECTDIR}/$project/\n---\n"
 
+# CHECK THE MYSL DB VERSION NEEDED
+                 
+
 # MAKING FUNCTIONS FOR REUSABLE CODE
-checkDir () {
     # CHECK IF BUNDLE EXISTS ALREADY - append date if so
+checkDir () {
     if [ -d "${PROJECTDIR}/${project}/${BUNDLED}" ]; then
         BUNDLED="${BUNDLED}.${DATE}"
         SCHEMA="${SCHEMA}_${DATE}"
@@ -47,7 +49,8 @@ updatePatchingTool () {
 
 createDB () {
     # MAKE THE MYSQL SCHEMA
-    mysql -udia -e "CREATE SCHEMA ${SCHEMA}";
+    mysql -u$MYSQLUSER -e "CREATE SCHEMA ${SCHEMA}";
+    echo "mysql -u${MYSQLUSER} -e "CREATE SCHEMA ${SCHEMA}";"
     CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
     if [ $CHECKDB == $SCHEMA ]; then
         echo "SUCCESS: Database ${SCHEMA} made!"
@@ -65,7 +68,7 @@ createBranch () {
     if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
         # INSTALL LICENSE + PORTAL-EXT PROPERTIES
         # cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
-        cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
+        cp ${LRDIR}/Branch/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
         # echo "SUCCESS: License and Portal-ext placed"
         #updatePatchingTool
         createDB
@@ -89,7 +92,12 @@ createBundle () {
         # INSTALL LICENSE + PORTAL-EXT PROPERTIES
         cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
         cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        echo "SUCCESS: License and Portal-ext placed"
+        if [ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml && ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]; then
+            echo "SUCCESS: License and Portal-ext placed"
+        else
+            echo "FAIL: Please manually place license and portal-ext files"
+            xdg-open ${PROJECTDIR}/$project/$BUNDLED/
+        fi
         updatePatchingTool
         createDB
         # UPDATE PORTAL-EXT WITH NEW DB
@@ -111,7 +119,12 @@ createFPBundle () {
         # INSTALL LICENSE + PORTAL-EXT PROPERTIES
         cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
         cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        echo "SUCCESS: License and Portal-ext placed"
+        if [ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml && ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]; then
+            echo "SUCCESS: License and Portal-ext placed"
+        else
+            echo "FAIL: Please manually place license and portal-ext files"
+            xdg-open ${PROJECTDIR}/$project/$BUNDLED/
+        fi
         updatePatchingTool
         # COPY FP + PATCH + CLEAN TEMP FILES
         FPZIP="liferay-fix-pack-dxp-$update-$versiontrim.zip"
@@ -159,7 +172,7 @@ select version in "${DXP[@]}"; do
                 SRC="Branch/liferay-portal-tomcat-master-all/liferay-portal-master-all"
                 BUNDLED="liferay-dxp-$version-$update"
                 SCHEMA="${versiontrimx}_${project}_$update"
-                createBundle
+                createBranch
             else
                 SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
                 BUNDLED="liferay-dxp-$version.u$update"
@@ -281,16 +294,42 @@ select version in "${DXP[@]}"; do
             break
             ;;
         "Config")
-            mysqlserverlist=mysqlserverlist.txt
+            DBDserver_DIR=$DBDEPLOYER_HOME/servers/$mysqlserver/
+            echo "The DBDeployer server dir is $DBDserver_DIR"
+            echo "DBDeployer versions command:"
+            dbdeployer versions
             # Send list of installed DBDeployer servers to .txt
             # TODO: check if dbdeployer; if yes, use SANDBOX_HOME / if no, 3306?
-            ls '/home/dia/Liferay/MySQL/servers/' > $mysqlserverlist
+            mysqlserverlist=mysqlserverlist.txt
+            ls "${DBDEPLOYER_HOME}/servers/" > $mysqlserverlist
+            # Check if 3306 in server list, if not add
+            # FIRE TODO: fix grep
+            if grep -Fxq "$FILENAME" my_list.txt
+                then
+                    # code if found -- NOTHING
+                    echo "CHECK: 3306 already in $mysqlserverlist"
+                else
+                    # code if not found
+                    echo "CHECK: 3306 not yet in $mysqlserverlist -- inserting 3306 as an option"
+                    echo -e "3306" >> $mysqlserverlist
+                fi
             # Define array of available MySQL servers available to choose from  
             mysqlarray=(`cat "$mysqlserverlist"`)
 
+
             select mysqlserver in "${mysqlarray[@]}"; do
+                # UPDATE portal-ext with selected server
                 sed -i "s!localhost:*/SCHEMA!$mysqlserver!g" ${LRDIR}/portal-ext.properties
-                echo "MySQL Server set at localhost:${mysqlserver}"
+                echo -e "Master portal-ext.properties updated! MySQL Server set at localhost:${mysqlserver}\n---\n"
+                if [ $mysqlserver == '3306' ]; then
+                    # This is on by default if mysql installed
+                    echo "Nothing else to do"
+                else
+                    # Start the DBDeployer server
+                    read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
+                    cd $DBDserver_DIR && ./start
+                fi
+
                 break
             done
             exit
