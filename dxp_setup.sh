@@ -193,39 +193,32 @@ select version in "${DXP[@]}"; do
             done
             echo -e "\n---\n"
             # TODO: Potential Refactor
-            # CURRENT LOGIC IS SLIGHTLY DUMB
             if (( $update > 3 )); then
-                # -- START IF UPDATE
-                # echo "Patch level is an Update: u$update"
+                # -- IF UPDATE
                 SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
                 BUNDLED="liferay-dxp-$version.u$update"
                 SCHEMA="${versiontrimx}_${project}_U${update}"
                 createBundle
-                # -- END IF UPDATE
             elif (( $update == 1 )) || (( $update == 3 )); then
-                # -- START IF SP
+                # -- IF SP
                 # echo "Patch level is an SP: sp$update"
                 SRC="$version/liferay-dxp-tomcat-$version-sp$update/liferay-dxp-$version.$update-sp$update"
                 BUNDLED="liferay-dxp-$version-sp$update"
                 SCHEMA="${versiontrimx}_${project}_SP${update}"
                 createBundle
-                # -- END IF SP
             elif [ $update == 'branch' ]; then
-                # -- START IF 73 BRANCH
+                # -- IF 73 BRANCH
                 versiontrim=${version//.10}
                 SRC="Branch/liferay-portal-tomcat-${versiontrim}.x-private-all/liferay-portal-${versiontrim}.x-private-all"
                 BUNDLED="liferay-$version-$update"
                 SCHEMA="${versiontrimx}_${project}_$update"
                 createBranch
-                # -- ENDIF BRANCH
             else
-                # -- START IF FP
-                # echo "Patch level is a FP: DXP $version dxp-$update"
+                # -- IF FP
                 SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
                 BUNDLED="liferay-dxp-$version.dxp-$update"
                 SCHEMA="${versiontrimx}_${project}_dxp${update}"
                 createFPBundle
-                # -- END IF FP
             fi
             break
             ;;
@@ -243,21 +236,17 @@ select version in "${DXP[@]}"; do
 
             if [ $update == 'branch' ]; then
                 versiontrim=${version//.10}
-                # -- START IF 70-72 BRANCH
-                # echo "$project Patch level is: DXP $version dxp-$update"
+                # -- IF 70-72 BRANCH
                 SRC="Branch/liferay-portal-tomcat-$versiontrim.x-private-all/liferay-portal-$versiontrim.x-private-all"
                 BUNDLED="liferay-$versiontrim-$update"
                 SCHEMA="${versiontrimx}_${project}_$update"
                 createBranch
-                # -- ENDIF BRANCH
             else
-                # -- START FP
-                # echo "$project Patch level is: DXP $version dxp-$update"
+                # -- IF FP
                 SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
                 BUNDLED="liferay-dxp-$version.dxp-$update"
                 SCHEMA="${versiontrimx}_${project}_dxp${update}"
                 createFPBundle
-                # -- END FP
             fi
             break
             ;;
@@ -279,17 +268,15 @@ select version in "${DXP[@]}"; do
             if (( $update > 20 )); then
                 echo -e "\tWARN: Service Pack needed, no fix pack support yet."
             elif [ $update == 'branch' ]; then
-                # -- START IF 62 61 BRANCH
+                # -- IF 62 61 BRANCH
                 echo -e "\tWARN: No branch support yet for Portal 6.2 or 6.1"
-                # -- ENDIF BRANCH
             else
-                # -- START IF SP
+                # -- IF SP
                 echo "Ok, setting up a $project folder with Portal $version SP $update bundle..."
                 SRC="$version/liferay-portal-tomcat-$version-ee-sp$update/liferay-portal-$version-ee-sp$update"
                 BUNDLED="liferay-portal-tomcat-$version.ee-sp$update"
                 SCHEMA="${versiontrim}_${project}_SP${update}"
                 createBundle
-            # -- END IF FP
             fi
             break
             ;;
@@ -304,7 +291,7 @@ select version in "${DXP[@]}"; do
             ls "${DBDEPLOYER_HOME}/servers/" > $mysqlserverlist
             # Check if 3306 in server list, if not add
             # FIRE TODO: fix grep
-            if grep -Fxq "$FILENAME" my_list.txt
+            if grep -Fxq "3306" $mysqlserverlist
                 then
                     # code if found -- NOTHING
                     echo -e "\tCHECK: 3306 already in $mysqlserverlist"
