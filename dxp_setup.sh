@@ -8,8 +8,8 @@ echo "CHECK: PROJECTDIR ${PROJECTDIR}"
 
 # NAME THE PROJECT
 read -p 'Project Code: ' project
-mkdir -p ${PROJECTDIR}/$project/
-echo -e "SUCCESS: Project created at ${PROJECTDIR}/$project/\n---\n"
+mkdir -p "${PROJECTDIR}"/"$project"/
+echo -e "\tSUCCESS: Project created at ${PROJECTDIR}/$project/\n---\n"
 
 # CHECK THE MYSL DB VERSION NEEDED
                  
@@ -35,27 +35,27 @@ updatePatchingTool () {
     if [[ $version == "7.4.13" ]] || [[ $version == "7.3.10" ]]; then
         # v3.0.37 PATCHING TOOL
         cp -rf ${LRDIR}/Patching/patching-tool-3.0.37/patching-tool/ ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
-        echo "SUCCESS: Updated the Patching Tool folder to 3.0.37"
+        echo -e "\tSUCCESS: Updated the Patching Tool folder to 3.0.37"
     elif [[ $version == "7.2.10" ]]; then
         # v2.0.16 PATCHING TOOL
         cp -r ${LRDIR}/Patching/patching-tool-2.0.16/patching-tool/ ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
-        echo "SUCCESS: Updated the Patching Tool folder to 2.0.16"
+        echo -e "\tSUCCESS: Updated the Patching Tool folder to 2.0.16"
     else
         # v1.0.23 PATCHING TOOL
         cp -r ${LRDIR}/Patching/patching-tool-1.0.23/patching-tool/ ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
-        echo "SUCCESS: Updated the Patching Tool folder to 1.0.23"
+        echo -e "\tSUCCESS: Updated the Patching Tool folder to 1.0.23"
     fi
 }
 
 createDB () {
     # MAKE THE MYSQL SCHEMA
     mysql -u$MYSQLUSER -e "CREATE SCHEMA ${SCHEMA}";
-    echo "mysql -u${MYSQLUSER} -e "CREATE SCHEMA ${SCHEMA}";"
+    # echo -e "mysql -u${MYSQLUSER} -e "CREATE SCHEMA ${SCHEMA}";"
     CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
     if [ $CHECKDB == $SCHEMA ]; then
-        echo "SUCCESS: Database ${SCHEMA} made!"
+        echo -e "\tSUCCESS: Created database ${SCHEMA}"
     else
-        echo "FAIL: Database ${SCHEMA} not created. Please create manually."
+        echo -e "\tFAIL: Database ${SCHEMA} not created. Please create manually."
     fi
 }
 
@@ -64,7 +64,7 @@ createBranch () {
     checkDir
     # CREATE FOLDER
     cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
-    echo "SUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
+    echo -e "\tSUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
     if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
         # INSTALL LICENSE + PORTAL-EXT PROPERTIES
         # cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
@@ -74,11 +74,11 @@ createBranch () {
         createDB
         # UPDATE PORTAL-EXT WITH NEW DB
         sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
-        echo "SUCCESS: portal-ext.properties updated with $SCHEMA"
+        echo -e "\tSUCCESS: portal-ext.properties updated with $SCHEMA"
     else
-        echo "FAIL: Folder not created"
-        echo "DEBUG: Source ${LRDIR}/${SRC}"
-        echo "DEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
+        echo -e "\tFAIL: Folder not created"
+        echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
+        echo -e "\tDEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
     fi
 }
 
@@ -87,26 +87,26 @@ createBundle () {
     checkDir
     # CREATE FOLDER
     cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
-    echo "SUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
+    echo -e "\tSUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
     if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
         # INSTALL LICENSE + PORTAL-EXT PROPERTIES
         cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
         cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        if [ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml && ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]; then
-            echo "SUCCESS: License and Portal-ext placed"
+        if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml && ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]]; then
+            echo -e "\tSUCCESS: License and Portal-ext placed"
         else
-            echo "FAIL: Please manually place license and portal-ext files"
+            echo -e "\tFAIL: Please manually place license and portal-ext files"
             xdg-open ${PROJECTDIR}/$project/$BUNDLED/
         fi
         updatePatchingTool
         createDB
         # UPDATE PORTAL-EXT WITH NEW DB
         sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
-        echo "SUCCESS: portal-ext.properties updated with $SCHEMA"
+        echo -e "\tSUCCESS: Updated portal-ext.properties with $SCHEMA"
     else
-        echo "FAIL: Folder not created"
-        echo "DEBUG: Source ${LRDIR}/${SRC}"
-        echo "DEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
+        echo -e "\tFAIL: Folder not created"
+        echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
+        echo -e "\tDEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
     fi
 }
 
@@ -114,41 +114,41 @@ createFPBundle () {
     checkDir
     # CREATE FOLDER
     cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
-    echo "SUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
+    echo -e "\tSUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
     if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
         # INSTALL LICENSE + PORTAL-EXT PROPERTIES
         cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
         cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        if [ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml && ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]; then
-            echo "SUCCESS: License and Portal-ext placed"
+        if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml && ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]]; then
+            echo -e "\tSUCCESS: License and Portal-ext placed"
         else
-            echo "FAIL: Please manually place license and portal-ext files"
+            echo -e "\tFAIL: Please manually place license and portal-ext files"
             xdg-open ${PROJECTDIR}/$project/$BUNDLED/
         fi
         updatePatchingTool
         # COPY FP + PATCH + CLEAN TEMP FILES
         FPZIP="liferay-fix-pack-dxp-$update-$versiontrim.zip"
-        echo "DEBUG: Fix Pack sourced from ${LRDIR}/$FPZIP"
+        # echo -e "\tDEBUG: Fix Pack sourced from ${LRDIR}/$FPZIP"
         cp ${LRDIR}/$version/FP/$FPZIP ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
         # If FP copied properly, then install 
         if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP ]; then
-            echo -e "Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP\nStarting Fix Pack Installation..."
+            echo -e "\tFix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP\nStarting Fix Pack Installation..."
             ( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ && ./patching-tool.sh install && ./patching-tool.sh info)
             # CLEAN TEMP FILES
             ( cd ${PROJECTDIR}/$project/$BUNDLED && lrclean)
-            echo "SUCCESS: Fix Pack dxp-$update install completed! Temp Folders cleaned"
+            echo -e "\tSUCCESS: Fix Pack dxp-$update install completed! Temp Folders cleaned"
         else
-            echo "FAIL: Fix Pack not placed. Please manually install Fix Pack."
+            echo -e "\tFAIL: Fix Pack not placed. Please manually install Fix Pack."
             xdg-open ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
         fi
         createDB
         # UPDATE PORTAL-EXT WITH NEW DB
         sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
-        echo "SUCCESS: portal-ext.properties updated with $SCHEMA"
+        echo -e "\tSUCCESS: Updated portal-ext.properties with $SCHEMA"
     else
-        echo "FAIL: Folder not created"
-        echo "DEBUG: Source ${LRDIR}/${SRC}"
-        echo "DEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
+        echo -e "\tFAIL: Folder not created"
+        echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
+        echo -e "\tDEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
     fi
 }
 
@@ -163,7 +163,7 @@ select version in "${DXP[@]}"; do
             read -p "Select DXP $version patch level (Update): " update
             numcheck='^[0-9]+$'
             until [[ $update =~ ($numcheck|master) ]]; do
-                echo -e "ERROR: Invalid Input. Valid Inputs: Update # or master.\n"
+                echo -e "\tERROR: Invalid Input. Valid Inputs: Update # or master.\n"
                 read -p "Select DXP $version patch level (Update): " update
             done
             echo -e "\n---\n"
@@ -196,7 +196,7 @@ select version in "${DXP[@]}"; do
             # CURRENT LOGIC IS SLIGHTLY DUMB
             if (( $update > 3 )); then
                 # -- START IF UPDATE
-                echo "Patch level is an Update: u$update"
+                # echo "Patch level is an Update: u$update"
                 SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
                 BUNDLED="liferay-dxp-$version.u$update"
                 SCHEMA="${versiontrimx}_${project}_U${update}"
@@ -204,7 +204,7 @@ select version in "${DXP[@]}"; do
                 # -- END IF UPDATE
             elif (( $update == 1 )) || (( $update == 3 )); then
                 # -- START IF SP
-                echo "Patch level is an SP: sp$update"
+                # echo "Patch level is an SP: sp$update"
                 SRC="$version/liferay-dxp-tomcat-$version-sp$update/liferay-dxp-$version.$update-sp$update"
                 BUNDLED="liferay-dxp-$version-sp$update"
                 SCHEMA="${versiontrimx}_${project}_SP${update}"
@@ -220,7 +220,7 @@ select version in "${DXP[@]}"; do
                 # -- ENDIF BRANCH
             else
                 # -- START IF FP
-                echo "Patch level is a FP: DXP $version dxp-$update"
+                # echo "Patch level is a FP: DXP $version dxp-$update"
                 SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
                 BUNDLED="liferay-dxp-$version.dxp-$update"
                 SCHEMA="${versiontrimx}_${project}_dxp${update}"
@@ -244,7 +244,7 @@ select version in "${DXP[@]}"; do
             if [ $update == 'branch' ]; then
                 versiontrim=${version//.10}
                 # -- START IF 70-72 BRANCH
-                echo "$project Patch level is: DXP $version dxp-$update"
+                # echo "$project Patch level is: DXP $version dxp-$update"
                 SRC="Branch/liferay-portal-tomcat-$versiontrim.x-private-all/liferay-portal-$versiontrim.x-private-all"
                 BUNDLED="liferay-$versiontrim-$update"
                 SCHEMA="${versiontrimx}_${project}_$update"
@@ -252,7 +252,7 @@ select version in "${DXP[@]}"; do
                 # -- ENDIF BRANCH
             else
                 # -- START FP
-                echo "$project Patch level is: DXP $version dxp-$update"
+                # echo "$project Patch level is: DXP $version dxp-$update"
                 SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
                 BUNDLED="liferay-dxp-$version.dxp-$update"
                 SCHEMA="${versiontrimx}_${project}_dxp${update}"
@@ -268,7 +268,7 @@ select version in "${DXP[@]}"; do
             read -p "Select Portal $version patch level (SP #): " update
             numcheck='^[0-9]+$'
             until [[ $update =~ ($numcheck|branch) ]]; do
-                echo -e "ERROR: Invalid Input. Valid Inputs: SP # or branch\n"
+                echo -e "\tERROR: Invalid Input. Valid Inputs: SP # or branch\n"
                 read -p "Select Portal $version patch level (SP #): " update
             done
             echo -e "\n---\n"
@@ -277,10 +277,10 @@ select version in "${DXP[@]}"; do
             # fixpacks=( ["SP20"]=154 ["SP19"]=148 ["SP18"]=138)
 
             if (( $update > 20 )); then
-                echo "Service Pack needed, no fix pack support yet."
+                echo -e "\tWARN: Service Pack needed, no fix pack support yet."
             elif [ $update == 'branch' ]; then
                 # -- START IF 62 61 BRANCH
-                echo "No branch support yet for Portal 6.2 or 6.1"
+                echo -e "\tWARN: No branch support yet for Portal 6.2 or 6.1"
                 # -- ENDIF BRANCH
             else
                 # -- START IF SP
@@ -307,10 +307,10 @@ select version in "${DXP[@]}"; do
             if grep -Fxq "$FILENAME" my_list.txt
                 then
                     # code if found -- NOTHING
-                    echo "CHECK: 3306 already in $mysqlserverlist"
+                    echo -e "\tCHECK: 3306 already in $mysqlserverlist"
                 else
                     # code if not found
-                    echo "CHECK: 3306 not yet in $mysqlserverlist -- inserting 3306 as an option"
+                    echo -e "\tCHECK: 3306 not yet in $mysqlserverlist -- inserting 3306 as an option"
                     echo -e "3306" >> $mysqlserverlist
                 fi
             # Define array of available MySQL servers available to choose from  
@@ -320,7 +320,7 @@ select version in "${DXP[@]}"; do
             select mysqlserver in "${mysqlarray[@]}"; do
                 # UPDATE portal-ext with selected server
                 sed -i "s!localhost:*/SCHEMA!$mysqlserver!g" ${LRDIR}/portal-ext.properties
-                echo -e "Master portal-ext.properties updated! MySQL Server set at localhost:${mysqlserver}\n---\n"
+                echo -e "\tSUCCESS: Master portal-ext.properties updated! MySQL Server set at localhost:${mysqlserver}\n---\n"
                 if [ $mysqlserver == '3306' ]; then
                     # This is on by default if mysql installed
                     echo "Nothing else to do"
@@ -342,8 +342,8 @@ select version in "${DXP[@]}"; do
     esac
 done
 
+echo -e "\tSUCCESS: Finished setup of ${PROJECTDIR}/$project/$BUNDLED"
 echo -e "\n---\n"
-echo "SUCCESS: Finished setup of ${PROJECTDIR}/$project/$BUNDLED"
 # START BUNDLE OR EXIT SCRIPT
 read -rsn1 -p"Press any key to start $BUNDLED bundle... or Ctrl-C to exit";echo
 cd ${PROJECTDIR}/$project/$BUNDLED/tomcat*/bin/ && ./catalina.sh run

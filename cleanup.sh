@@ -10,7 +10,9 @@ echo -e "\n---\n"
 
 today=$(date)
 echo "Today's date is: $today"
-read -p 'Set how many days before Project Deletion:' expirydays
+read -p 'Set how many days before Project Deletion: (default 60)' expirydays
+expirydays=${expirydays:-60}
+echo $expirydays
 expirydate=`date --date="$expirydays days ago"`
 expirydatesec=`date --date="$expirydays days ago" +%s`
 echo "Expiration date is: $expirydate ($expirydatesec)"
@@ -39,7 +41,7 @@ dropDB () {
             echo "WARN: DB already deleted!"
         else
             mysql -u$MYSQLUSER -e "DROP DATABASE ${dbNameC}";
-            if [ $CHECKDB == $dbNameC ]; then
+            if [[ $CHECKDB != $dbNameC ]]; then
                 echo "SUCCESS: Database ${dbNameC} deleted!"
             else
                 echo "FAIL: Database ${dbNameC} not deleted -- please manually delete"
@@ -48,22 +50,26 @@ dropDB () {
     done
 }
 
+i=0
 # echo "This is all current projects:\n$allproj"
 for project in $allproj; do
-    echo -e "\n---\n"
+    i=$((++i))
+    # echo -e "\n---\n"
     origin='/home/dia/Downloads/Liferay/PROJECTS/'
     simplified=${project/$origin/}
-    echo "Project Name: $simplified ($project)"
+    # echo "Project Name: $simplified ($project)"
     lastmod=`date -r $project`
     lastmodsec=`date -r $project +%s`
-    echo "Last modified date: $lastmod ($lastmodsec)"
+    # echo "Last modified date: $lastmod ($lastmodsec)"
+    echo -e "$i. \t Project: $simplified"
+    echo -e "\t Last modified $lastmod ($lastmodsec)"
     if [[ $lastmodsec < $expirydatesec ]]; then
         # echo "last modified date is less than expiry date - TO BE DELETED"
-        echo $(( ($expirydatesec - $lastmodsec) / 86400 )) days over expiry date - slated for deletion
+        echo -e "\t $(( ($expirydatesec - $lastmodsec) / 86400 )) days over expiry date - slated for deletion\n"
         dropDB
         rm -rI $project
     else
         # echo "last modified date is greater than expiry date - KEEP"
-        echo $(( ($lastmodsec - $expirydatesec) / 86400 )) days until deletion
+        echo -e "\t $(( ($lastmodsec - $expirydatesec) / 86400 )) days until deletion\n"
     fi
 done
