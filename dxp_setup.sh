@@ -47,6 +47,12 @@ updatePatchingTool () {
     fi
 }
 
+updatePortalExtDB () {
+    # UPDATE PORTAL-EXT WITH NEW DB
+    sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+    echo -e "\tSUCCESS: Updated portal-ext.properties with $SCHEMA"
+}
+
 createDB () {
     # MAKE THE MYSQL SCHEMA
     mysql -u$MYSQLUSER -e "CREATE SCHEMA ${SCHEMA}";
@@ -69,12 +75,10 @@ createBranch () {
         # INSTALL LICENSE + PORTAL-EXT PROPERTIES
         # cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
         cp ${LRDIR}/Branch/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        # echo "SUCCESS: License and Portal-ext placed"
+        echo "SUCCESS: Portal-ext placed"
         #updatePatchingTool
-        createDB
-        # UPDATE PORTAL-EXT WITH NEW DB
-        sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
-        echo -e "\tSUCCESS: portal-ext.properties updated with $SCHEMA"
+        # createDB
+        # updatePortalExtDB
     else
         echo -e "\tFAIL: Folder not created"
         echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
@@ -100,9 +104,7 @@ createBundle () {
         fi
         updatePatchingTool
         createDB
-        # UPDATE PORTAL-EXT WITH NEW DB
-        sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
-        echo -e "\tSUCCESS: Updated portal-ext.properties with $SCHEMA"
+        updatePortalExtDB
     else
         echo -e "\tFAIL: Folder not created"
         echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
@@ -142,9 +144,7 @@ createFPBundle () {
             xdg-open ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
         fi
         createDB
-        # UPDATE PORTAL-EXT WITH NEW DB
-        sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
-        echo -e "\tSUCCESS: Updated portal-ext.properties with $SCHEMA"
+        updatePortalExtDB
     else
         echo -e "\tFAIL: Folder not created"
         echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
