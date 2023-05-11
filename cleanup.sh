@@ -17,7 +17,7 @@ expirydate=`date --date="$expirydays days ago"`
 expirydatesec=`date --date="$expirydays days ago" +%s`
 echo "Expiration date is: $expirydate ($expirydatesec)"
 
-read -rsn1 -p"Press any key to run cleanup";echo
+read -rsn1 -p"Press any key to run cleanup (or press Ctrl-C to change expiration date)";echo
 
 dropDB () {
     # Find the Portal.exp property first
@@ -30,44 +30,49 @@ dropDB () {
         propSuffix='?characterEncoding=UTF-8&dontTrackOpenResources=true&holdResultsOpenOverStatementClose=true&serverTimezone=GMT&useFastDateParsing=false&useUnicode=true'
         dbNameA=${eachProjPort/$propPrefix/}
         dbNameB=${dbNameA/$propSuffix/}
-        # dbNameC=${dbNameB:5}
         dbNameC=${dbNameB#*/}
-        echo $dbNameC
+        echo -e "\n\tDB: $dbNameC"
         # DROP THE MYSQL DATABASE
         CHECKDB=`mysql -u$MYSQLUSER -e "SHOW DATABASES" | grep $dbNameC`
-        echo "checkdb result: $CHECKDB"
-        read -rsn1 -p"Press any key to continue";echo
+        # echo "checkdb result: $CHECKDB"
         if [[ $CHECKDB != $dbNameC ]]; then
-            echo "WARN: DB already deleted!"
+            echo -e "\tWARN: DB already deleted!"
         else
+            read -rsn1 -p"Press any key to confirm DB delete";echo
             mysql -u$MYSQLUSER -e "DROP DATABASE ${dbNameC}";
-            if [[ $CHECKDB != $dbNameC ]]; then
-                echo "SUCCESS: Database ${dbNameC} deleted!"
+            CHECKDB=`mysql -u$MYSQLUSER -e "SHOW DATABASES" | grep $dbNameC`
+            if [[ $CHECKDB == $dbNameC ]]; then
+                echo -e "\tFAIL: Database ${dbNameC} not deleted -- please manually delete"
             else
-                echo "FAIL: Database ${dbNameC} not deleted -- please manually delete"
+                echo -e "\tSUCCESS: Database ${dbNameC} deleted!"
             fi
         fi
     done
 }
 
 i=0
-# echo "This is all current projects:\n$allproj"
+
 for project in $allproj; do
     i=$((++i))
-    # echo -e "\n---\n"
     origin='/home/dia/Downloads/Liferay/PROJECTS/'
     simplified=${project/$origin/}
-    # echo "Project Name: $simplified ($project)"
     lastmod=`date -r $project`
     lastmodsec=`date -r $project +%s`
-    # echo "Last modified date: $lastmod ($lastmodsec)"
     echo -e "$i. \t Project: $simplified"
     echo -e "\t Last modified $lastmod ($lastmodsec)"
     if [[ $lastmodsec < $expirydatesec ]]; then
         # echo "last modified date is less than expiry date - TO BE DELETED"
         echo -e "\t $(( ($expirydatesec - $lastmodsec) / 86400 )) days over expiry date - slated for deletion\n"
         dropDB
+        echo -e "\n"
+        read -rsn1 -p"Press any key to confirm $project directory deletion";echo
         rm -rI $project
+        if [ -e $project ]; then
+            echo -e "\FAIL: Project deletion failed, please manually delete"
+            xdg-open $project
+        else
+            echo -e "\tSUCCESS: $simplified Project deleted!"
+        fi
     else
         # echo "last modified date is greater than expiry date - KEEP"
         echo -e "\t $(( ($lastmodsec - $expirydatesec) / 86400 )) days until deletion\n"
