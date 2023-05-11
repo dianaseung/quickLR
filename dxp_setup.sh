@@ -21,6 +21,15 @@ else
     echo "CHECK: MYSQLUSER is set to ${MYSQLUSER}"
 fi
 
+# TODO: CHECK THE MYSL DB VERSION NEEDED
+MYSQLPORTLN=`grep 'jdbc.default.url' ${LRDIR}/portal-ext.properties`
+propPrefix='jdbc.default.url=jdbc:mysql://localhost:'
+propSuffix='?characterEncoding=UTF-8&dontTrackOpenResources=true&holdResultsOpenOverStatementClose=true&serverTimezone=GMT&useFastDateParsing=false&useUnicode=true'
+dbNameA=${MYSQLPORTLN/$propPrefix/}
+dbNameB=${dbNameA/$propSuffix/}
+dbPort=${dbNameB%/*}
+echo "CHECK: Current MYSQL Port: $dbPort"
+
 # NAME THE PROJECT
 read -p 'Project Code: ' project
 mkdir -p "${PROJECTDIR}"/"$project"/
@@ -31,7 +40,6 @@ else
     xdg-open "${PROJECTDIR}"
 fi
 
-# TODO: CHECK THE MYSL DB VERSION NEEDED
                 
 checkDir () {
     # CHECK IF BUNDLE EXISTS ALREADY - append date if so
@@ -289,7 +297,6 @@ select version in "${DXP[@]}"; do
                 fi
             # Define array of available MySQL servers available to choose from  
             mysqlarray=(`cat "$mysqlserverlist"`)
-
 
             select mysqlserver in "${mysqlarray[@]}"; do
                 # UPDATE portal-ext with selected server
