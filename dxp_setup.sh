@@ -1,15 +1,28 @@
 #!/bin/bash
-# for DXP 7.4 setup automation
+# Project: Quick LR - Liferay DXP setup automation for Support CSE
 # GLOBAL VARIABLES
 DATE=$(date +%y%m%d%H%M)
 # TODO: Remove debugging checks
-echo "CHECK: LRDIR ${LRDIR}"
-echo "CHECK: PROJECTDIR ${PROJECTDIR}"
+if [ -z ${LRDIR+x} ]; then
+    echo "WARN: Please set LRDIR in ~/.bashrc first!"
+else
+    echo "CHECK: LRDIR is set to ${LRDIR}"
+fi
+if [ -z ${PROJECTDIR+x} ]; then
+    echo "WARN: Please set PROJECTDIR in ~/.bashrc first!"
+else
+    echo "CHECK: PROJECTDIR is set to ${PROJECTDIR}"
+fi
 
 # NAME THE PROJECT
 read -p 'Project Code: ' project
 mkdir -p "${PROJECTDIR}"/"$project"/
-echo -e "SUCCESS: Project created at ${PROJECTDIR}/$project/"
+if [[ -e "${PROJECTDIR}"/"$project"/ ]]; then
+    echo -e "SUCCESS: Project created at ${PROJECTDIR}/$project/"
+else
+    echo -e "ERROR: Project dir not created. Please manually make dir."
+    xdg-open "${PROJECTDIR}"
+fi
 
 # TODO: CHECK THE MYSL DB VERSION NEEDED
                 
