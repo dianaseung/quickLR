@@ -66,7 +66,7 @@ for project in $allproj; do
         dropDB
         echo -e "\n"
         read -rsn1 -p"Press any key to confirm $project directory deletion";echo
-        rm -rI $project
+        rm -r $project
         if [ -e $project ]; then
             echo -e "\FAIL: Project deletion failed, please manually delete"
             xdg-open $project
