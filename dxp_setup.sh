@@ -9,20 +9,18 @@ echo "CHECK: PROJECTDIR ${PROJECTDIR}"
 # NAME THE PROJECT
 read -p 'Project Code: ' project
 mkdir -p "${PROJECTDIR}"/"$project"/
-echo -e "\tSUCCESS: Project created at ${PROJECTDIR}/$project/\n---\n"
+echo -e "SUCCESS: Project created at ${PROJECTDIR}/$project/"
 
-# CHECK THE MYSL DB VERSION NEEDED
-                 
-
-# MAKING FUNCTIONS FOR REUSABLE CODE
-    # CHECK IF BUNDLE EXISTS ALREADY - append date if so
+# TODO: CHECK THE MYSL DB VERSION NEEDED
+                
 checkDir () {
+    # CHECK IF BUNDLE EXISTS ALREADY - append date if so
     if [ -d "${PROJECTDIR}/${project}/${BUNDLED}" ]; then
         BUNDLED="${BUNDLED}.${DATE}"
         SCHEMA="${SCHEMA}_${DATE}"
-        echo "Project $project with Update u$update folder already exists! Appending date..."
+        echo "Project $project with $1 $update folder already exists! Appending date..."
     else
-        echo "Project $project with Update u$update folder does not exist yet..."
+        echo "Project $project with $1 $update folder does not exist yet..."
     fi
 }
 
@@ -65,86 +63,59 @@ createDB () {
     fi
 }
 
-createBranch () {
-    # No License placed 
-    checkDir
-    # CREATE FOLDER
-    cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
-    echo -e "\tSUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
-    if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
-        # INSTALL LICENSE + PORTAL-EXT PROPERTIES
-        # cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
-        cp ${LRDIR}/Branch/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        echo "SUCCESS: Portal-ext placed"
-        #updatePatchingTool
-        # createDB
-        # updatePortalExtDB
+patchInstall () {
+    # COPY FP + PATCH + CLEAN TEMP FILES
+    FPZIP="liferay-fix-pack-dxp-$update-$versiontrim.zip"
+    # echo -e "\tDEBUG: Fix Pack sourced from ${LRDIR}/$FPZIP"
+    cp ${LRDIR}/$version/FP/$FPZIP ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
+    # If FP copied properly, then install 
+    if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP ]; then
+        echo -e "\tSUCCESS: Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP\n\tStarting Fix Pack Installation...\n---\n"
+        ( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ && ./patching-tool.sh install && ./patching-tool.sh info)
+        # CLEAN TEMP FILES
+        ( cd ${PROJECTDIR}/$project/$BUNDLED && lrclean)
+        echo -e "\n---\n\tSUCCESS: Fix Pack dxp-$update install completed! Temp Folders cleaned"
     else
-        echo -e "\tFAIL: Folder not created"
-        echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
-        echo -e "\tDEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
+        echo -e "\tFAIL: Fix Pack not placed. Please manually install Fix Pack."
+        xdg-open ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
     fi
 }
 
 createBundle () {
-    # This should work for both Updates and SP 
-    checkDir
+    checkDir $1
     # CREATE FOLDER
     cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
-    echo -e "\tSUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
+    echo -e "\tSUCCESS: DXP $version $1 $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
     if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
-        # INSTALL LICENSE + PORTAL-EXT PROPERTIES
-        cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
+        # Install Portal-Ext - Always Needed
         cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml && ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]]; then
-            echo -e "\tSUCCESS: License and Portal-ext placed"
+        if [[ -e ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]]; then
+            echo -e "\tSUCCESS: Portal-ext placed"
         else
-            echo -e "\tFAIL: Please manually place license and portal-ext files"
+            echo -e "\tFAIL: Please manually place portal-ext files"
             xdg-open ${PROJECTDIR}/$project/$BUNDLED/
         fi
-        updatePatchingTool
-        createDB
-        updatePortalExtDB
-    else
-        echo -e "\tFAIL: Folder not created"
-        echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
-        echo -e "\tDEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
-    fi
-}
-
-createFPBundle () {
-    checkDir
-    # CREATE FOLDER
-    cp -r ${LRDIR}/$SRC ${PROJECTDIR}/$project/$BUNDLED
-    echo -e "\tSUCCESS: DXP $version $update folder created at ${PROJECTDIR}/$project/$BUNDLED"
-    if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
-        # INSTALL LICENSE + PORTAL-EXT PROPERTIES
-        cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
-        cp ${LRDIR}/portal-ext.properties ${PROJECTDIR}/$project/$BUNDLED/
-        if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml && ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]]; then
-            echo -e "\tSUCCESS: License and Portal-ext placed"
+        # Install License - Only if !branch / + Update Patching Tool, Create DB, Update Portal-Ext
+        if [[ $1 == 'Branch' ]]; then
+            echo -e "\tINFO: No license needed for Branch/Master"
         else
-            echo -e "\tFAIL: Please manually place license and portal-ext files"
-            xdg-open ${PROJECTDIR}/$project/$BUNDLED/
+            cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
+            if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml ]]; then
+                echo -e "\tSUCCESS: License placed"
+            else
+                echo -e "\tFAIL: Please manually place license files"
+                xdg-open ${PROJECTDIR}/$project/$BUNDLED/deploy/
+            fi
+            updatePatchingTool
+            createDB
+            updatePortalExtDB
         fi
-        updatePatchingTool
-        # COPY FP + PATCH + CLEAN TEMP FILES
-        FPZIP="liferay-fix-pack-dxp-$update-$versiontrim.zip"
-        # echo -e "\tDEBUG: Fix Pack sourced from ${LRDIR}/$FPZIP"
-        cp ${LRDIR}/$version/FP/$FPZIP ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
-        # If FP copied properly, then install 
-        if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP ]; then
-            echo -e "\tFix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP\nStarting Fix Pack Installation..."
-            ( cd ${PROJECTDIR}/$project/$BUNDLED/patching-tool/ && ./patching-tool.sh install && ./patching-tool.sh info)
-            # CLEAN TEMP FILES
-            ( cd ${PROJECTDIR}/$project/$BUNDLED && lrclean)
-            echo -e "\tSUCCESS: Fix Pack dxp-$update install completed! Temp Folders cleaned"
+        # Update Patching Tool - Only if FP
+        if [[ $1 == 'FP' ]]; then
+            patchInstall
         else
-            echo -e "\tFAIL: Fix Pack not placed. Please manually install Fix Pack."
-            xdg-open ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
+            echo -e "\tINFO: No patching needed"
         fi
-        createDB
-        updatePortalExtDB
     else
         echo -e "\tFAIL: Folder not created"
         echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
@@ -156,9 +127,9 @@ createFPBundle () {
 echo -e "\n---\nChoose Liferay version to install:"
 DXP=("7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "6.2" "6.1" "Config" "Exit")
 select version in "${DXP[@]}"; do
+    versiontrim=${version//.}
     case $version in
         "7.4.13")
-            versiontrim=${version//.}
             versiontrimx=${versiontrim//13}
             read -p "Select DXP $version patch level (Update): " update
             numcheck='^[0-9]+$'
@@ -172,18 +143,17 @@ select version in "${DXP[@]}"; do
                 SRC="Branch/liferay-portal-tomcat-master-all/liferay-portal-master-all"
                 BUNDLED="liferay-dxp-$version-$update"
                 SCHEMA="${versiontrimx}_${project}_$update"
-                createBranch
+                createBundle Branch
             else
                 SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
                 BUNDLED="liferay-dxp-$version.u$update"
                 SCHEMA="${versiontrimx}_${project}_U${update}"
-                createBundle
+                createBundle Update
             fi
             break
             ;;
         "7.3.10")
             # START 73 - USES UPDATES, SP and FP
-            versiontrim=${version//.}
             versiontrimx=${versiontrim//10}
             read -p "Select DXP $version patch level (Update or FP #): " update
             numcheck='^[0-9]+$'
@@ -198,39 +168,37 @@ select version in "${DXP[@]}"; do
                 SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
                 BUNDLED="liferay-dxp-$version.u$update"
                 SCHEMA="${versiontrimx}_${project}_U${update}"
-                createBundle
+                createBundle Update
             elif (( $update == 1 )) || (( $update == 3 )); then
                 # -- IF SP
                 # echo "Patch level is an SP: sp$update"
                 SRC="$version/liferay-dxp-tomcat-$version-sp$update/liferay-dxp-$version.$update-sp$update"
                 BUNDLED="liferay-dxp-$version-sp$update"
                 SCHEMA="${versiontrimx}_${project}_SP${update}"
-                createBundle
+                createBundle Update
             elif [ $update == 'branch' ]; then
                 # -- IF 73 BRANCH
                 versiontrim=${version//.10}
                 SRC="Branch/liferay-portal-tomcat-${versiontrim}.x-private-all/liferay-portal-${versiontrim}.x-private-all"
                 BUNDLED="liferay-$version-$update"
                 SCHEMA="${versiontrimx}_${project}_$update"
-                createBranch
+                createBundle Branch
             else
                 # -- IF FP
                 SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
                 BUNDLED="liferay-dxp-$version.dxp-$update"
                 SCHEMA="${versiontrimx}_${project}_dxp${update}"
-                createFPBundle
+                createBundle FP
             fi
             break
             ;;
         "7.2.10" | "7.1.10" | "7.0.10")
-            versiontrim=${version//.}
             versiontrimx=${versiontrim//10}
-            # 72 71 70 ALL USE FP
-            read -p "Select DXP $version patch level (FP #): " update
+            read -p "Select DXP $version patch level: " update
             numcheck='^[0-9]+$'
             until [[ $update =~ ($numcheck|branch) ]]; do
                 echo -e "ERROR: Invalid Input. Valid Inputs: Update/FP # or branch\n"
-                read -p "Select DXP $version patch level (Update or FP #): " update
+                read -p "Select DXP $version patch level: " update
             done
             echo -e "\n---\n"
 
@@ -240,18 +208,17 @@ select version in "${DXP[@]}"; do
                 SRC="Branch/liferay-portal-tomcat-$versiontrim.x-private-all/liferay-portal-$versiontrim.x-private-all"
                 BUNDLED="liferay-$versiontrim-$update"
                 SCHEMA="${versiontrimx}_${project}_$update"
-                createBranch
+                createBundle Branch
             else
                 # -- IF FP
                 SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
                 BUNDLED="liferay-dxp-$version.dxp-$update"
                 SCHEMA="${versiontrimx}_${project}_dxp${update}"
-                createFPBundle
+                createBundle FP
             fi
             break
             ;;
         "6.2" | "6.1")
-            versiontrim=${version//.}
             versiontrimx=${versiontrim//10}
             # CHOOSE A SP
             read -p "Select Portal $version patch level (SP #): " update
@@ -276,7 +243,7 @@ select version in "${DXP[@]}"; do
                 SRC="$version/liferay-portal-tomcat-$version-ee-sp$update/liferay-portal-$version-ee-sp$update"
                 BUNDLED="liferay-portal-tomcat-$version.ee-sp$update"
                 SCHEMA="${versiontrim}_${project}_SP${update}"
-                createBundle
+                createBundle Update
             fi
             break
             ;;
@@ -334,5 +301,3 @@ echo -e "\n---\n"
 # START BUNDLE OR EXIT SCRIPT
 read -rsn1 -p"Press any key to start $BUNDLED bundle... or Ctrl-C to exit";echo
 cd ${PROJECTDIR}/$project/$BUNDLED/tomcat*/bin/ && ./catalina.sh run
-# [COMMENTED OUT FOR NOW] TODO: If exit and directory exists, open the folder the project was made
-# xdg-open ${PROJECTDIR}/$project
