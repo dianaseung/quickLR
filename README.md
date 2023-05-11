@@ -73,6 +73,8 @@ What does this script do?
 - Download activation xml licenses for DXP 7.0.10, 7.1.10, 7.2.10, 7.3.10 and 7.4.13 from Help Center, and place in `Liferay/DXP/License/` directory. Rename the xml licenses as DXP version names. (See image)
 ![Liferay Licenses](https://drive.google.com/file/d/1CP3Z-xHrRz0upGbhp9f3-TCSAyvnX1FY/view?usp=sharing)
 - Download sample [portal-ext.properties](/sample/portal-ext.properties) and place in `Liferay/DXP/` directory. Edit `DBUSER` and `DBPW` with MySQL credentials; edit port (default 3306) if needed. Do **not** edit the `SCHEMA` keyword, as that will be auto-updated with the quickLR script.
+- Run `chmod +x dxp_setup.sh` to give current user execute permissions
+- Start script using `./dxp_setup.sh`
 
 ### Setup: Set Environment Variables
 
@@ -114,6 +116,7 @@ password=
 ---
 
 ## Recent Updates
+- 5/6/23 - Added cleanup script to delete Project folders and databases if last modified older than set date (default 30)
 - 4/8/23 - Refactor (functions) - originally planned as a 2.0 rework
 - 4/8/23 - Updates to latest patching-tool when installing bundle - P1: Currently hardcoded to cp specific patching-tool version based on DXP version
 - 2/22/23 - Auto start bundle from tomcat dir
@@ -128,6 +131,8 @@ password=
 
 ## Upcoming Planned v1.0 Features
 - DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
+- Investigate whether Liferay bundles could be pulled via API or consider source code method - CURL from VPN
+- 
 
 ### Minor Changes Planned
 - Refactor - Set var (bundleType) to check if update/SP/FP/branch or master; Merge createBundle/createBranch/createFPBundle into one function and have components run conditionally based on bundleType 
