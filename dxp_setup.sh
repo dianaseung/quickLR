@@ -1,17 +1,24 @@
 #!/bin/bash
 # Project: Quick LR - Liferay DXP setup automation for Support CSE
-# GLOBAL VARIABLES
 DATE=$(date +%y%m%d%H%M)
-# TODO: Remove debugging checks
+# GLOBAL VARIABLE CHECKS
 if [ -z ${LRDIR+x} ]; then
     echo "WARN: Please set LRDIR in ~/.bashrc first!"
+    exit 1
 else
     echo "CHECK: LRDIR is set to ${LRDIR}"
 fi
 if [ -z ${PROJECTDIR+x} ]; then
     echo "WARN: Please set PROJECTDIR in ~/.bashrc first!"
+    exit 1
 else
     echo "CHECK: PROJECTDIR is set to ${PROJECTDIR}"
+fi
+if [ -z ${MYSQLUSER+x} ]; then
+    echo "WARN: Please set MYSQLUSER in ~/.bashrc first!"
+    exit 1
+else
+    echo "CHECK: MYSQLUSER is set to ${MYSQLUSER}"
 fi
 
 # NAME THE PROJECT
