@@ -14,12 +14,12 @@ if [ -z ${PROJECTDIR+x} ]; then
 else
     echo "CHECK: PROJECTDIR is ${PROJECTDIR}"
 fi
-if [ -z ${MYSQLUSER+x} ]; then
-    echo "WARN: Please set MYSQLUSER in ~/.bashrc first!"
-    exit 1
-else
-    echo "CHECK: MYSQLUSER is ${MYSQLUSER}"
-fi
+# if [ -z ${MYSQLUSER+x} ]; then
+#     echo "WARN: Please set MYSQLUSER in ~/.bashrc first!"
+#     exit 1
+# else
+#     echo "CHECK: MYSQLUSER is ${MYSQLUSER}"
+# fi
 
 # CHECK: MYSL DB VERSION/PORT
 MYSQLPORTLN=`grep 'jdbc.default.url' ${LRDIR}/portal-ext.properties`
@@ -77,7 +77,7 @@ updatePatchingTool () {
 createDB () {
     # MAKE THE MYSQL SCHEMA
     echo -e "DEBUG: Starting to create MySQL database..."
-    mysql -u$MYSQLUSER -p -e "CREATE SCHEMA ${SCHEMA}";
+    mysql -e "CREATE SCHEMA ${SCHEMA}";
     # echo -e "mysql -u${MYSQLUSER} -e "CREATE SCHEMA ${SCHEMA};"
     CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
     echo -e "DEBUG: CHECKDB - ${CHECKDB}"
