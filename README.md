@@ -1,19 +1,19 @@
 # quickLR
 
+## About QuickKR: Overview
 ---
-
-Linux Bash script to help Customer Support Engineers to quickly setup basic Liferay Tomcat bundles (non-Docker)
-
-<img src="/media/quickLR-preview.gif" alt="Preview of quickLR script functionality" style="text-align: center;"/>
-
----
-
-## About QuickEnv: Overview
-
-### Functionality
-
 Linux bash script quickly sets up a basic Liferay Tomcat bundle and MySQL database for Liferay Support testing.
 Alternative to using Docker compose to setup a standard Liferay bundle
+
+<p align="center">
+<img src="/media/quickLR-preview.gif" alt="Preview of quickLR script functionality" />
+</p>
+
+---
+
+
+
+### DXP Setup Functionality
 
 What does this script do?
 1. Creates a Project folder with Project Code (i.e. CHICAGOLC)
@@ -78,9 +78,9 @@ Sample Project directory ($PROJECTDIR)
 
 ---
 
-## USAGE AND SETUP
+## SETUP
 
-## quickLR Installation / Setup
+### quickLR Installation / Setup
 1. Create Folder Structure
     - Download [/sample/Liferay.zip](/sample/Liferay.zip) and extract to desired destination to quickly setup a Folder Structure like above.
 2. Setup Liferay Licenses
@@ -91,11 +91,9 @@ Sample Project directory ($PROJECTDIR)
     - Download [/sample/portal-ext.properties](/sample/portal-ext.properties) and place in `Liferay/DXP/` directory. 
     - Update `DBUSER` and `DBPW` with MySQL credentials. 
     - Do **not** edit the `SCHEMA` keyword, as that will be auto-updated with the quickLR script.
-4. [Setup MySQL](#setup-install-mysql)
-    - [Setup MySQL credentials in .my.cnf](#setup-edit-mycnf-for-quick-sql-setup)
+4. [Setup MySQL](#setup-install-mysql-server)
+    - [Setup MySQL credentials in .my.cnf](#setup-edit-mycnf-for-mysql-credentials)
 5. Run `chmod +x dxp_setup.sh` to give current user execute permissions
-6. Start script using `./dxp_setup.sh`
-7. When done with projects, [delete Project directories and MySQL databases](#cleanup-script) using `./cleanup.sh`
 
 ### Setup: Set Environment Variables
 
@@ -111,7 +109,6 @@ Replace `[liferay_directory]`, `[project_directory]`, and `[dbdeployer_directory
 ---
 
 ### Setup: Install mysql-server
-See for more installation detail: https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-20-04
 - Install the mysql-server package
 ```
 sudo apt install mysql-server
@@ -120,12 +117,12 @@ sudo apt install mysql-server
 ```
 sudo systemctl start mysql.service
 ```
-
+- Set password 
+See https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-20-04 for more installation detail
 
 ----
 
 ### Setup: Edit .my.cnf for MySQL credentials
-See for more configuration detail: https://www.inmotionhosting.com/support/server/databases/edit-mysql-my-cnf/
 - Open the .my.cnf file
 ```
 nano ~/.my.cnf
@@ -143,6 +140,18 @@ password=mysqlpw
 ```
 chmod 600 ~/.my.cnf 
 ```
+See for more configuration detail: https://www.inmotionhosting.com/support/server/databases/edit-mysql-my-cnf/
+
+---
+
+## Usage
+### DXP Setup Usage
+1. Start DXP setup script using `./dxp_setup.sh`
+2. Input Project code (such as CHICAGOLCS or BRAVO)
+3. Select Liferay DXP/Portal version (choose from 7.4.13, 7.3.10, 7.2.10, 7.1.10, 7.0.10, 6.2.10, 6.1.10)
+4. Input the Update, SP or Fix Pack patch level as a numeric input. (such as 72, 51, 2). Please note that DXP 7.2 only supports SP installs (no Fix Pack support yet)
+5. When setup completes, if all steps successful, press any key to start bundle within terminal or press Ctrl-C to exit script.
+    - If any adjustments, such as portal-ext.properties changes or hotfix installation, needs to be done, you can make those adjustments now before returning to terminal to start bundle
 
 ---
 
@@ -151,13 +160,24 @@ chmod 600 ~/.my.cnf
 <img src="/media/quickLR-cleanup.gif" alt="Preview of quickLR cleanup script" />
 </p>
 
-Set how many days before expiration date.
-Manually run script to delete all Project directory and MySQL database older than expiration date, based on last modified date. 
-Show per Project, for each Liferay bundle, how many days left until expiration date, if last modified before expiration date.
+- Cleanup Script looks at all folders in $PROJECTDIR within 1 depth, and compare their last modified date to expiration date (set by user).
+- Manually run script to delete all Project directory and MySQL database older than expiration date, based on last modified date. 
+    - If last modified date is older than expiration date, check if the MySQL database listed in the portal-ext.properties still exists. 
+        - If database still exists, prompt to delete database.
+        - Once databases of all Liferay bundles within a project folder are deleted, prompt to delete Project folder.
+    - If last modified date has not yet reached expiration date, returns (per Project) how many days left until expiration. 
 
+### Cleanup Usage
+1. Start cleanup script using
 ```
 ./cleanup.sh
 ```
+2. Input how many days until expiration date (default is 60 days)
+3. If there are any Projects past expiration date, press any key to confirm database deletion.  Then press any key to confirm Project folder deletion. 
+    - Press Ctrl-C at any time to cancel deletion.
+4. Script will print remaining days until expiration date for remaining.
+5. Script will auto-exit once completed.
+
 
 ---
 
