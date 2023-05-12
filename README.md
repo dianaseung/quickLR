@@ -1,4 +1,4 @@
-# quickLR
+<h1 align="center">quickLR</h1>
 
 <p align="center">
 <img src="https://img.shields.io/maintenance/yes/2023?style=for-the-badge" alt="Maintenance" />
@@ -9,7 +9,7 @@
 
 ---
 
-## About QuickKR: Overview
+## About QuickLR: Overview
 ---
 Linux bash script quickly sets up a basic Liferay Tomcat bundle and MySQL database for Liferay Support testing.
 Alternative to using Docker compose to setup a standard Liferay bundle
