@@ -53,10 +53,12 @@ updatePortalExtDB () {
 
 createDB () {
     # MAKE THE MYSQL SCHEMA
+    echo -e "DEBUG: Starting to create MySQL database..."
     mysql -u$MYSQLUSER -e "CREATE SCHEMA ${SCHEMA}";
-    # echo -e "mysql -u${MYSQLUSER} -e "CREATE SCHEMA ${SCHEMA}";"
+    # echo -e "mysql -u${MYSQLUSER} -e "CREATE SCHEMA ${SCHEMA};"
     CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
-    if [ $CHECKDB == $SCHEMA ]; then
+    echo -e "DEBUG: CHECKDB - ${CHECKDB}"
+    if [[ $CHECKDB == $SCHEMA ]]; then
         echo -e "\tSUCCESS: Created database ${SCHEMA}"
     else
         echo -e "\tFAIL: Database ${SCHEMA} not created. Please create manually."
