@@ -85,7 +85,7 @@ export LRDIR=[liferay_directory]
 export PROJECTDIR=[project_directory]
 export DBDEPLOYER_HOME=[dbdeployer_directory]
 ```
-Replace `[liferay_directory]`, `[project_directory]`, `[username]` and `[dbdeployer_directory]` with the appropriate values.
+Replace `[liferay_directory]`, `[project_directory]`, and `[dbdeployer_directory]` with the appropriate values.
 
 ---
 
@@ -110,11 +110,12 @@ See for more configuration detail: https://www.inmotionhosting.com/support/serve
 nano ~/.my.cnf
 ```
 
-- Add user/password to .my.cnf file to allow script to create MySQL database:
+- Add user/password to .my.cnf file to allow script to create MySQL database (replace `mysqluser` and `mysqlpw`)
 
 ```
-user=
-password=
+[client]
+user=mysqluser
+password=mysqlpw
 ```
 
 - Ensure proper file permissions
@@ -139,6 +140,7 @@ chmod 600 ~/.my.cnf
 - Support for DXP 7.2, 7.1, 7.0 added
 
 ## Upcoming Planned v1.0 Features
+- [License & source LRDIR] Find target source based on find/grep of versiontrimx
 - DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
 - Investigate whether Liferay bundles could be pulled via API or consider source code method - CURL from VPN
 - 
