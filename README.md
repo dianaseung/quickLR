@@ -125,6 +125,26 @@ chmod 600 ~/.my.cnf
 
 ---
 
+## Upcoming Planned v1.0 Features
+- [License & Target source] Find target source based on find/grep of versiontrimx
+- DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
+- Investigate whether Liferay bundles could be pulled via API or consider source code method - curl from VPN
+
+### Minor Changes Planned
+- Update sample recommended folder structure zip (currently missing Patching dir)
+- Link to lrclean setup confluence doc
+- Potential: set License, Branch and Patching directory in .bashrc
+
+## Possible v2.0 Features - Tagged with Priority
+- <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> Automated script to check, move and rename new Liferay downloads (Update, SP, Fixpack) to appropriate Liferay folder upon download to Downloads folder (Alternatively, curl from VPN)
+- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> Update to latest patching-tool available with any new bundle - P2: grep highest number dir
+- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" />  Separate Config:
+    - Second bundle setup (update server.xml file ports from 8xxx to 9xxx, cp com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config file to /osgi/configs/) - Note: writing the functionality is easy, but need to figure out logic for how to add to script menu (maybe need to flesh out the config menu)
+    - Copy `com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config` config file to /$LIFERAY_HOME/osgi/config/for remote elasticsearch setup
+- <img src="https://img.shields.io/badge/Priority-Low-green" alt="Low Priority" />  Fix Pack Support for Portal 6.2 and 6.1 (currently SP support only)
+
+---
+
 ## Recent Updates
 - 5/11/23 - Updated installation instructions based on testing on clean Ubuntu VM install
 - 5/10/23 - Refactor: Updated createBundle function to accept parameter (Update, FP, Branch) to determine setup; Merged createBundle/createBranch/createFPBundle into single createBundle function
@@ -141,21 +161,3 @@ chmod 600 ~/.my.cnf
 - 12/20/22 - Support for DXP 7.2, 7.1, 7.0 added
 - 12/16/22 - Support for SP1 and SP3 for DXP 7.3 added
 - 12/14/22 - Support for DXP 7.4 added
-
-## Upcoming Planned v1.0 Features
-- [License & Target source] Find target source based on find/grep of versiontrimx
-- DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
-- Investigate whether Liferay bundles could be pulled via API or consider source code method - curl from VPN
-
-### Minor Changes Planned
-- Update sample recommended folder structure zip (currently missing Patching dir)
-- Link to lrclean setup confluence doc
-- Potential: set License, Branch and Patching directory in .bashrc
-
-## Possible v2.0 Features - Tagged with Priority
-- <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> Automated script to check, move and rename new Liferay downloads (Update, SP, Fixpack) to appropriate Liferay folder upon download to Downloads folder (Alternatively, curl from VPN)
-- <img src="https://img.shields.io/badge/Priority-Medium-Yellow" alt="Medium Priority" /> Update to latest patching-tool available with any new bundle - P2: grep highest number dir
-- [Medium] Separate Config:
-    - Second bundle setup (update server.xml file ports from 8xxx to 9xxx, cp com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config file to /osgi/configs/) - Note: writing the functionality is easy, but need to figure out logic for how to add to script menu (maybe need to flesh out the config menu)
-    - Copy `com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config` config file to /$LIFERAY_HOME/osgi/config/for remote elasticsearch setup
-- [Low] Fix Pack Support for Portal 6.2 and 6.1 (currently SP support only)
