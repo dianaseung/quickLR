@@ -66,11 +66,13 @@ What does this script do?
     └── ...
 </details>
 
-<img src="/media/dir-dxp-sample.png" alt="Sample DXP folder" style="text-align: center; margin: 0 auto;" />
-<p style="text-align: center; font-style: italic;">Sample DXP directory ($LRDIR)</p>
+<p align="center">
+<img src="/media/dir-dxp-sample.png" alt="Sample DXP folder" />
+*Sample DXP directory ($LRDIR)*</p>
 
-<img src="/media/dir-project-sample.png" alt="Sample Project folder" style="text-align: center; margin: 0 auto;">
-<p> style="text-align: center; font-style: italic;">Sample Project directory ($PROJECTDIR)</p>
+<p align="center">
+<img src="/media/dir-project-sample.png" alt="Sample Project folder" />
+*Sample Project directory ($PROJECTDIR)*</p>
 
 ---
 
