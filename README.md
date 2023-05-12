@@ -115,6 +115,23 @@ export DBDEPLOYER_HOME=[dbdeployer_directory]
 ```
 Replace `[liferay_directory]`, `[project_directory]`, and `[dbdeployer_directory]` with the appropriate values.
 
+- Add LRCLEAN function to bashrc:
+```
+function lrclean() {
+echo "Cleaning up Temp/Work..."
+rm -rf ./osgi/state/*
+echo "OSGi State Folder Cleared!"
+wait
+rm -rf ./temp/*
+echo "Temp Folder Cleared!"
+wait
+rm -rf ./work/*
+echo "Work Folder Cleared!"
+echo "Temp/Work Folders Cleared!"
+}
+export -f lrclean
+```
+
 
 ### Setup: Install mysql-server
 - Install the mysql-server package
@@ -191,13 +208,9 @@ See for more configuration detail: https://www.inmotionhosting.com/support/serve
 - <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
 - <img src="https://img.shields.io/badge/Priority-High-red" alt="Medium Priority" /> Investigate whether Liferay bundles could be pulled via API or consider source code method - curl from VPN
 - <img src="https://img.shields.io/badge/Priority-High-red" alt="Medium Priority" /> [License & Target source] Find target source based on find/grep of $versiontrimx
+- <img src="https://img.shields.io/badge/Priority-Low-green" alt="Low Priority" /> Consider setting License, Branch and Patching directory in .bashrc
 
-### Minor Changes Planned
-- Update sample recommended folder structure zip (currently missing Patching dir)
-- Link to lrclean setup confluence doc
-- Potential: set License, Branch and Patching directory in .bashrc
-
-## Possible v2.0 Features - Tagged with Priority
+## Possible v2.0 Features
 - <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> Automated script to check, move and rename new Liferay downloads (Update, SP, Fixpack) to appropriate Liferay folder upon download to Downloads folder (Alternatively, curl from VPN)
 - <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> Update to latest patching-tool available with any new bundle - P2: grep highest number dir
 - <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" />  Separate Config:
