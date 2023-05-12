@@ -66,25 +66,36 @@ What does this script do?
     └── ...
 </details>
 
-<p align="center">
+<h5 align="center">
+Sample DXP directory ($LRDIR)
 <img src="/media/dir-dxp-sample.png" alt="Sample DXP folder" />
-*Sample DXP directory ($LRDIR)*</p>
+</h5>
 
-<p align="center">
+<h5 align="center">
+Sample Project directory ($PROJECTDIR)
 <img src="/media/dir-project-sample.png" alt="Sample Project folder" />
-*Sample Project directory ($PROJECTDIR)*</p>
+</h5>
 
 ---
 
 ## USAGE AND SETUP
 
-## Setup
-- Download [this Liferay.zip](/sample/Liferay.zip) and extract to desired destination to quickly setup a Folder Structure like above.
-- Download activation xml licenses for DXP 7.0.10, 7.1.10, 7.2.10, 7.3.10 and 7.4.13 from Help Center, and place in `Liferay/DXP/License/` directory. Rename the xml licenses as DXP version names. (See image)
-![Liferay Licenses](https://drive.google.com/file/d/1CP3Z-xHrRz0upGbhp9f3-TCSAyvnX1FY/view?usp=sharing)
-- Download sample [portal-ext.properties](/sample/portal-ext.properties) and place in `Liferay/DXP/` directory. Edit `DBUSER` and `DBPW` with MySQL credentials; edit port (default 3306) if needed. Do **not** edit the `SCHEMA` keyword, as that will be auto-updated with the quickLR script.
-- Run `chmod +x dxp_setup.sh` to give current user execute permissions
-- Start script using `./dxp_setup.sh`
+## quickLR Installation / Setup
+1. Create Folder Structure
+    - Download [/sample/Liferay.zip](/sample/Liferay.zip) and extract to desired destination to quickly setup a Folder Structure like above.
+2. Setup Liferay Licenses
+    - Download activation xml licenses for DXP 7.0.10, 7.1.10, 7.2.10, 7.3.10 and 7.4.13 from Help Center
+    - Place in `Liferay/DXP/License/` directory. 
+    - Rename the xml licenses as DXP version names. ![See Liferay Licenses sample](/media/dir-license-sample.png)
+3. Setup portal-ext.properties file
+    - Download [/sample/portal-ext.properties](/sample/portal-ext.properties) and place in `Liferay/DXP/` directory. 
+    - Update `DBUSER` and `DBPW` with MySQL credentials. 
+    - Do **not** edit the `SCHEMA` keyword, as that will be auto-updated with the quickLR script.
+4. [Setup MySQL](#setup-install-mysql)
+    - [Setup MySQL credentials in .my.cnf](#setup-edit-mycnf-for-quick-sql-setup)
+5. Run `chmod +x dxp_setup.sh` to give current user execute permissions
+6. Start script using `./dxp_setup.sh`
+7. When done with projects, delete Project directories and MySQL databases using `./cleanup.sh`
 
 ### Setup: Set Environment Variables
 
@@ -137,6 +148,10 @@ chmod 600 ~/.my.cnf
 
 ## Cleanup Script
 Manually run to delete all Project directory and MySQL database based on last modified date older than X days
+
+```
+./cleanup.sh
+```
 
 <img src="/media/quickLR-cleanup.gif" alt="Preview of quickLR cleanup script" style="text-align: center;"/>
 
