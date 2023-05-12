@@ -1,5 +1,13 @@
 # quickLR
 
+<img src="https://img.shields.io/maintenance/yes/2023?style=for-the-badge" alt="Maintenance" />
+<img src="https://img.shields.io/github/last-commit/dianaseung/quickLR?style=for-the-badge" alt="Last Commit" />
+<img src="https://img.shields.io/github/v/tag/dianaseung/quickLR?style=for-the-badge" alt="Latest Tag" />
+<img src="https://img.shields.io/github/license/dianaseung/quickLR?style=for-the-badge" alt="License" />
+
+
+---
+
 ## About QuickKR: Overview
 ---
 Linux bash script quickly sets up a basic Liferay Tomcat bundle and MySQL database for Liferay Support testing.
@@ -106,7 +114,6 @@ export DBDEPLOYER_HOME=[dbdeployer_directory]
 ```
 Replace `[liferay_directory]`, `[project_directory]`, and `[dbdeployer_directory]` with the appropriate values.
 
----
 
 ### Setup: Install mysql-server
 - Install the mysql-server package
@@ -119,8 +126,6 @@ sudo systemctl start mysql.service
 ```
 - Set password 
 See https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-20-04 for more installation detail
-
-----
 
 ### Setup: Edit .my.cnf for MySQL credentials
 - Open the .my.cnf file
@@ -181,7 +186,7 @@ See for more configuration detail: https://www.inmotionhosting.com/support/serve
 
 ---
 
-## Upcoming Planned v1.0 Features
+## Upcoming Planned Features (v1.0)
 - <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
 - <img src="https://img.shields.io/badge/Priority-High-red" alt="Medium Priority" /> Investigate whether Liferay bundles could be pulled via API or consider source code method - curl from VPN
 - <img src="https://img.shields.io/badge/Priority-High-red" alt="Medium Priority" /> [License & Target source] Find target source based on find/grep of $versiontrimx
@@ -201,7 +206,7 @@ See for more configuration detail: https://www.inmotionhosting.com/support/serve
 
 ---
 
-## Recent Updates
+## Update History
 - 5/11/23 - Updated installation instructions based on testing on clean Ubuntu VM install
 - 5/10/23 - Refactor: Updated createBundle function to accept parameter (Update, FP, Branch) to determine setup; Merged createBundle/createBranch/createFPBundle into single createBundle function
 - 5/6/23 - Added cleanup script to delete Project folders and databases if last modified older than set date (default 30)
