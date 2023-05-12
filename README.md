@@ -4,6 +4,8 @@
 
 Linux Bash script to help Customer Support Engineers to quickly setup basic Liferay Tomcat bundles (non-Docker)
 
+<img src="/media/quickLR-preview.gif" alt="Preview of quickLR script functionality" />
+
 ---
 
 ## About QuickEnv: Overview
@@ -122,6 +124,12 @@ password=mysqlpw
 ```
 chmod 600 ~/.my.cnf 
 ```
+
+---
+
+## Cleanup Script
+Manually run to delete all Project directory and MySQL database based on last modified date older than X days (prompted)
+<img src="/media/quickLR-cleanup.gif" alt="Preview of quickLR cleanup script" />
 
 ---
 
