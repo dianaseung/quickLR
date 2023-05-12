@@ -126,6 +126,8 @@ chmod 600 ~/.my.cnf
 ---
 
 ## Recent Updates
+- 5/11/23 - Updated installation instructions based on testing on clean Ubuntu VM install
+- 5/10/23 - Refactor: Updated createBundle function to accept parameter (Update, FP, Branch) to determine setup; Merged createBundle/createBranch/createFPBundle into single createBundle function
 - 5/6/23 - Added cleanup script to delete Project folders and databases if last modified older than set date (default 30)
 - 4/8/23 - Refactor (functions) - originally planned as a 2.0 rework
 - 4/8/23 - Updates to latest patching-tool when installing bundle - P1: Currently hardcoded to cp specific patching-tool version based on DXP version
@@ -136,26 +138,24 @@ chmod 600 ~/.my.cnf
 - 12/22/22 - Support for DXP 7.3, 7.2, 7.1 and 7.0 branches added
 - 12/21/22 - Support for master and nightly (DXP 7.4) added
 - 12/20/22 - Refactored code for improved readability and maintenance
+- 12/20/22 - Support for DXP 7.2, 7.1, 7.0 added
 - 12/16/22 - Support for SP1 and SP3 for DXP 7.3 added
-- Support for DXP 7.2, 7.1, 7.0 added
+- 12/14/22 - Support for DXP 7.4 added
 
 ## Upcoming Planned v1.0 Features
 - [License & source LRDIR] Find target source based on find/grep of versiontrimx
 - DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
-- Investigate whether Liferay bundles could be pulled via API or consider source code method - CURL from VPN
-- 
+- Investigate whether Liferay bundles could be pulled via API or consider source code method - curl from VPN
 
 ### Minor Changes Planned
-- Refactor - Set var (bundleType) to check if update/SP/FP/branch or master; Merge createBundle/createBranch/createFPBundle into one function and have components run conditionally based on bundleType 
-- Update README instructions for more explicit setup instructions (.my.cnf setup, DBDeployer/MySQL install/setup)
-- Update sample portal-ext.properties to allow for quicker testing setup (disable TOS, setup wiz, pw change, etc)
-- Update sample recommended folder structure zip
+- Update sample recommended folder structure zip (currently missing Patching dir)
 - Link to lrclean setup confluence doc
-- Potential: set license, branch directory in .bashrc
+- Potential: set License, Branch and Patching directory in .bashrc
 
-## Possible v2.0 Features
-- Update to latest patching-tool available with any new bundle - P2: grep highest number dir
-- Second bundle setup (update server.xml file ports from 8xxx to 9xxx, cp com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config file to /osgi/configs/) - Note: writing the functionality is easy, but need to figure out logic for how to add to script menu (maybe need to flesh out the config menu)
-- Fix Pack Support for Portal 6.2 and 6.1 (currently SP support only)
-- Automated script to check, move and rename new Liferay downloads (Update, SP, Fixpack) to appropriate Liferay folder upon download to Downloads folder
-- Cleanup script to automate deleting database and bundle(s) (either by whole project code or individual bundle)
+## Possible v2.0 Features - Tagged with Priority
+- [High] Automated script to check, move and rename new Liferay downloads (Update, SP, Fixpack) to appropriate Liferay folder upon download to Downloads folder (Alternatively, curl from VPN)
+- [Medium] Update to latest patching-tool available with any new bundle - P2: grep highest number dir
+- [Medium] Separate Config:
+    - Second bundle setup (update server.xml file ports from 8xxx to 9xxx, cp com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config file to /osgi/configs/) - Note: writing the functionality is easy, but need to figure out logic for how to add to script menu (maybe need to flesh out the config menu)
+    - Copy `com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config` config file to /$LIFERAY_HOME/osgi/config/for remote elasticsearch setup
+- [Low] Fix Pack Support for Portal 6.2 and 6.1 (currently SP support only)
