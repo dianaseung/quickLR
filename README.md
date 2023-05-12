@@ -1,10 +1,11 @@
 # quickLR
 
+<p align="center">
 <img src="https://img.shields.io/maintenance/yes/2023?style=for-the-badge" alt="Maintenance" />
 <img src="https://img.shields.io/github/last-commit/dianaseung/quickLR?style=for-the-badge" alt="Last Commit" />
 <img src="https://img.shields.io/github/v/tag/dianaseung/quickLR?style=for-the-badge" alt="Latest Tag" />
 <img src="https://img.shields.io/github/license/dianaseung/quickLR?style=for-the-badge" alt="License" />
-
+</p>
 
 ---
 
