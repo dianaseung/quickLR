@@ -83,7 +83,6 @@ Use `nano ~/.bashrc`to set the following environmental variables:
 # Environment Variables for quickLR usage (github.com/dianaseung/quickLR)
 export LRDIR=[liferay_directory]
 export PROJECTDIR=[project_directory]
-export MYSQLUSER=[username]
 export DBDEPLOYER_HOME=[dbdeployer_directory]
 ```
 Replace `[liferay_directory]`, `[project_directory]`, `[username]` and `[dbdeployer_directory]` with the appropriate values.
@@ -106,11 +105,21 @@ sudo systemctl start mysql.service
 
 ### Setup: Edit .my.cnf for quick SQL setup
 See for more configuration detail: https://www.inmotionhosting.com/support/server/databases/edit-mysql-my-cnf/
+- Open the .my.cnf file
+```
+nano ~/.my.cnf
+```
+
 - Add user/password to .my.cnf file to allow script to create MySQL database:
 
 ```
 user=
 password=
+```
+
+- Ensure proper file permissions
+```
+chmod 600 ~/.my.cnf 
 ```
 
 ---
