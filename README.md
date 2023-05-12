@@ -4,7 +4,7 @@
 
 Linux Bash script to help Customer Support Engineers to quickly setup basic Liferay Tomcat bundles (non-Docker)
 
-<img src="/media/quickLR-preview.gif" alt="Preview of quickLR script functionality" />
+<img src="/media/quickLR-preview.gif" alt="Preview of quickLR script functionality" style="text-align: center;"/>
 
 ---
 
@@ -65,6 +65,12 @@ What does this script do?
     │   ├── ...                                 # 
     └── ...
 </details>
+
+<img src="/media/dir-dxp-sample.png" alt="Sample DXP folder" style="text-align: center; margin: 0 auto;" />
+<p style="text-align: center; font-style: italic;">Sample DXP directory ($LRDIR)</p>
+
+<img src="/media/dir-project-sample.png" alt="Sample Project folder" style="text-align: center; margin: 0 auto;">
+<p> style="text-align: center; font-style: italic;">Sample Project directory ($PROJECTDIR)</p>
 
 ---
 
@@ -128,15 +134,16 @@ chmod 600 ~/.my.cnf
 ---
 
 ## Cleanup Script
-Manually run to delete all Project directory and MySQL database based on last modified date older than X days (prompted)
-<img src="/media/quickLR-cleanup.gif" alt="Preview of quickLR cleanup script" />
+Manually run to delete all Project directory and MySQL database based on last modified date older than X days
+
+<img src="/media/quickLR-cleanup.gif" alt="Preview of quickLR cleanup script" style="text-align: center;"/>
 
 ---
 
 ## Upcoming Planned v1.0 Features
-- [License & Target source] Find target source based on find/grep of versiontrimx
-- DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
-- Investigate whether Liferay bundles could be pulled via API or consider source code method - curl from VPN
+- <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
+- <img src="https://img.shields.io/badge/Priority-High-red" alt="Medium Priority" /> Investigate whether Liferay bundles could be pulled via API or consider source code method - curl from VPN
+- <img src="https://img.shields.io/badge/Priority-High-red" alt="Medium Priority" /> [License & Target source] Find target source based on find/grep of $versiontrimx
 
 ### Minor Changes Planned
 - Update sample recommended folder structure zip (currently missing Patching dir)
