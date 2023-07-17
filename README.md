@@ -154,7 +154,7 @@ nano ~/.my.cnf
 - Add user/password to .my.cnf file to allow script to create MySQL database (replace `mysqluser` and `mysqlpw`)
 
 ```
-[client]
+[mysql]
 user=mysqluser
 password=mysqlpw
 ```
