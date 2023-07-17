@@ -152,12 +152,12 @@ sudo mysql
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
 exit
 ```
-c). Use the password set in b) to run the security script to change password, and follow the prompts. 
+b). Use the password set in a) to run the security script to change password, and follow the prompts. 
 ```
 sudo mysql_secure_installation
 ```
 
-d). Open MySQL prompt to create MySQL user (replace 'user' with your own user) and set permissions
+c). Open MySQL prompt to create MySQL user (replace 'user' with your own user) and set permissions
 ```
 sudo mysql
 ```
