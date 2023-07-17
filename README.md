@@ -144,14 +144,45 @@ sudo systemctl start mysql.service
 ```
 - Set password 
 See https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-20-04 for more installation detail
+a). Open the MySQL prompt to alter root's password and then exit MySQL
+```
+sudo mysql
+```
+```
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
+exit
+```
+c). Use the password set in b) to run the security script to change password, and follow the prompts. 
+```
+sudo mysql_secure_installation
+```
 
-### Setup: Edit .my.cnf for MySQL credentials
+d). Open MySQL prompt to create MySQL user (replace 'user' with your own user) and set permissions
+```
+sudo mysql
+```
+```
+CREATE USER 'user'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON *.* TO 'sammy'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+exit
+```
+e). Test if it works using one of the following:
+```
+systemctl status mysql.service
+```
+```
+sudo mysqladmin -p -u user version
+```
+
+
+### Setup: Add MySQL credentials to .my.cnf to avoid MySQL prompts
 - Open the .my.cnf file
 ```
 nano ~/.my.cnf
 ```
 
-- Add user/password to .my.cnf file to allow script to create MySQL database (replace `mysqluser` and `mysqlpw`)
+- Add user/password to .my.cnf file to allow script to create MySQL database (replace `mysqluser` and `mysqlpw` with credentials set above)
 
 ```
 [mysql]
