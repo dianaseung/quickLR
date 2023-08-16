@@ -155,6 +155,13 @@ createBundle () {
             createDB
             updatePortalExtDB
         elif [[ $1 == 'FP' ]]; then
+            cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
+            if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml ]]; then
+                echo -e "\tSUCCESS: License placed"
+            else
+                echo -e "\tFAIL: Please manually place license files"
+                xdg-open ${PROJECTDIR}/$project/$BUNDLED/deploy/
+            fi
             # Update Patching Tool - Only if FP
             updatePatchingTool
             patchInstall
