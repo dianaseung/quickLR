@@ -63,7 +63,7 @@ updatePatchingTool () {
         # v3.0.37 PATCHING TOOL
         cp -rf ${LRDIR}/Patching/patching-tool-3.0.37/patching-tool/ ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
         echo -e "\tSUCCESS: Updated the Patching Tool folder to 3.0.37"
-    elif [[ $version == "7.2.10" ]]; then
+    elif [[ $version == "7.2.10" ]] || [[ $version == "7.0.10" ]]; then
         # v2.0.16 PATCHING TOOL
         cp -r ${LRDIR}/Patching/patching-tool-2.0.16/patching-tool/ ${PROJECTDIR}/$project/$BUNDLED/patching-tool/
         echo -e "\tSUCCESS: Updated the Patching Tool folder to 2.0.16"
@@ -77,9 +77,15 @@ updatePatchingTool () {
 createDB () {
     # MAKE THE MYSQL SCHEMA
     echo -e "DEBUG: Starting to create MySQL database..."
-    mysql -e "CREATE SCHEMA ${SCHEMA}";
+    if [[ $dbPort == '3306' ]]; then
+        mysql -e "CREATE SCHEMA ${SCHEMA};"
+        CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
+    else
+        mysql --socket=/tmp/mysql_sandbox$dbPort.sock --port $dbPort -u$DBDUSER -p$DBDPW -e "CREATE SCHEMA ${SCHEMA};"
+        echo "DEBUG: mysql --socket=/tmp/mysql_sandbox$dbPort.sock --port $dbPort -u$DBDUSER -p$DBDPW -e 'CREATE SCHEMA ${SCHEMA};'"
+        CHECKDB=`mysql --socket=/tmp/mysql_sandbox$dbPort.sock --port $dbPort -u$DBDUSER -p$DBDPW -e "SHOW DATABASES;" | grep $SCHEMA`
+    fi
     # echo -e "mysql -u${MYSQLUSER} -e "CREATE SCHEMA ${SCHEMA};"
-    CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
     echo -e "DEBUG: CHECKDB - ${CHECKDB}"
     if [[ $CHECKDB == $SCHEMA ]]; then
         echo -e "\tSUCCESS: Created database ${SCHEMA}"
@@ -90,12 +96,31 @@ createDB () {
 
 updatePortalExtDB () {
     sed -i "s/SCHEMA/$SCHEMA/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+    if [ $version == '7.0.10' ]; then
+        # com.mysql.jdbc.Driver
+        # sed -i "s/original/new/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+        sed -i "s/com.mysql.cj.jdbc.Driver/com.mysql.jdbc.Driver/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+        sed -i "s/&serverTimezone=GMT//g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+        sed -i "s/DBUSER/$DBDUSER/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+        sed -i "s/DBPW/$DBDPW/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+        # sed -i "s!localhost:.*/SCHEMA!localhost:$mysqlserver/SCHEMA!g" ${LRDIR}/portal-ext.properties
+        echo "SUCCESS: Portal-ext changed for 7.0 MySQL, DBDeployer login used"
+    else
+        sed -i "s/DBUSER/$MYSQLUSER/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+        sed -i "s/DBPW/$MYSQLPW/g" ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties
+        echo "INFO: mysql login used - $MYSQLUSER / $MYSQLPW"
+    fi
     echo -e "\tSUCCESS: Updated portal-ext.properties with $SCHEMA"
 }
 
 patchInstall () {
     # COPY FP + PATCH + CLEAN TEMP FILES
-    FPZIP="liferay-fix-pack-dxp-$update-$versiontrim.zip"
+    if [ $version == '7.0.10' ]; then
+        # liferay-fix-pack-de-87-7010
+        FPZIP="liferay-fix-pack-de-$update-$versiontrim.zip"
+    else
+        FPZIP="liferay-fix-pack-dxp-$update-$versiontrim.zip"
+    fi
     cp ${LRDIR}/$version/FP/$FPZIP ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/
     # If FP copied properly, then install 
     if [ -e ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP ]; then
@@ -127,6 +152,14 @@ createBundle () {
         # Install License - Only if !branch / + Update Patching Tool, Create DB, Update Portal-Ext
         if [[ $1 == 'Branch' ]]; then
             echo -e "\tINFO: No license needed for Branch/Master"
+            createDB
+            updatePortalExtDB
+        elif [[ $1 == 'FP' ]]; then
+            # Update Patching Tool - Only if FP
+            updatePatchingTool
+            patchInstall
+            createDB
+            updatePortalExtDB
         else
             cp ${LRDIR}/License/$version.xml ${PROJECTDIR}/$project/$BUNDLED/deploy/
             if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml ]]; then
@@ -139,17 +172,47 @@ createBundle () {
             createDB
             updatePortalExtDB
         fi
-        # Update Patching Tool - Only if FP
-        if [[ $1 == 'FP' ]]; then
-            patchInstall
-        else
-            echo -e "\tINFO: No patching needed"
-        fi
     else
         echo -e "\tFAIL: Folder not created"
         echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
         echo -e "\tDEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
     fi
+}
+
+changeMysqlVersion () {
+        echo "CHECK: Current MYSQL Port is $dbPort"
+        echo "Available DBDeployer versions:"
+        dbdeployer versions
+        # Send list of installed DBDeployer servers to .txt
+        # TODO: check if dbdeployer; if yes, use SANDBOX_HOME / if no, 3306?
+        mysqlserverlist=mysqlserverlist.txt
+        ls "${DBDEPLOYER_HOME}/servers/" > $mysqlserverlist
+        # Check if 3306 in server list, if not add
+        if grep -Fxq "3306" $mysqlserverlist
+            then
+                echo -e "\tCHECK: 3306 already in $mysqlserverlist"
+            else
+                echo -e "\tCHECK: 3306 not yet in $mysqlserverlist -- inserting 3306 as an option"
+                echo -e "3306" >> $mysqlserverlist
+            fi
+        # Define array of available MySQL servers available to choose from  
+        mysqlarray=(`cat "$mysqlserverlist"`)
+
+        select mysqlserver in "${mysqlarray[@]}"; do
+            DBDserver_DIR=$DBDEPLOYER_HOME/servers/$mysqlserver/
+            # echo -e "\tThe DBDeployer server dir is $DBDserver_DIR"
+            # UPDATE portal-ext with selected server
+            sed -i "s!localhost:.*/SCHEMA!localhost:$mysqlserver/SCHEMA!g" ${LRDIR}/portal-ext.properties
+            echo -e "\tSUCCESS: Master portal-ext.properties updated! MySQL Server set at localhost:${mysqlserver}\n---\n"
+            break
+        done
+        MYSQLPORTLN=`grep 'jdbc.default.url' ${LRDIR}/portal-ext.properties`
+        propPrefix='jdbc.default.url=jdbc:mysql://localhost:'
+        propSuffix='?characterEncoding=UTF-8&dontTrackOpenResources=true&holdResultsOpenOverStatementClose=true&serverTimezone=GMT&useFastDateParsing=false&useUnicode=true'
+        dbNameA=${MYSQLPORTLN/$propPrefix/}
+        dbNameB=${dbNameA/$propSuffix/}
+        dbPort=${dbNameB%/*}
+        echo "CHECK: Current MYSQL Port is $dbPort"
 }
 
 # Select DXP version
@@ -196,8 +259,8 @@ select version in "${DXP[@]}"; do
                 SCHEMA="${versiontrimx}_${project}_U${update}"
                 createBundle Update
             elif (( $update == 1 )) || (( $update == 3 )); then
-                # -- IF SP
-                SRC="$version/liferay-dxp-tomcat-$version-sp$update/liferay-dxp-$version.$update-sp$update"
+                # -- IF SP = liferay-dxp-tomcat-7.3.10.1-sp1/liferay-dxp-7.3.10.1-sp1
+                SRC="$version/liferay-dxp-tomcat-$version.$update-sp$update/liferay-dxp-$version.$update-sp$update"
                 BUNDLED="liferay-dxp-$version-sp$update"
                 SCHEMA="${versiontrimx}_${project}_SP${update}"
                 createBundle SP
@@ -217,26 +280,60 @@ select version in "${DXP[@]}"; do
             ;;
         "7.2.10" | "7.1.10" | "7.0.10")
             versiontrimx=${versiontrim//10}
-            read -p "Select DXP $version patch level: " update
-            numcheck='^[0-9]+$'
-            until [[ $update =~ ($numcheck|branch) ]]; do
-                echo -e "ERROR: Invalid Input. Valid Inputs: Update, FP or branch\n"
+            versionshort=${version//.10}
+            updateTypeList=("Update" "FP" "SP" "Branch")
+            select updateType in "${updateTypeList[@]}"; do
+                echo $updateType
+                echo -e "\tDEBUG: UpdateType set as $updateType"
                 read -p "Select DXP $version patch level: " update
-            done
-            echo -e "\n---\n"
+                numcheck='^[0-9]+$'
+                until [[ $update =~ ($numcheck|branch) ]]; do
+                    echo -e "ERROR: Invalid Input. Valid Inputs: Number or branch\n"
+                    read -p "Select DXP $version patch level: " update
+                done
+                echo -e "\n---\n"
 
-            if [ $update == 'branch' ]; then
-                versiontrim=${version//.10}
-                SRC="Branch/liferay-portal-tomcat-$versiontrim.x-private-all/liferay-portal-$versiontrim.x-private-all"
-                BUNDLED="liferay-$versiontrim-$update"
-                SCHEMA="${versiontrimx}_${project}_$update"
-                createBundle Branch
-            else
-                SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
-                BUNDLED="liferay-dxp-$version.dxp-$update"
-                SCHEMA="${versiontrimx}_${project}_dxp${update}"
-                createBundle FP
-            fi
+                if [ $update == 'branch' ]; then
+                    SRC="Branch/liferay-portal-tomcat-$versionshort.x-private-all/liferay-portal-$versionshort.x-private-all"
+                    BUNDLED="liferay-$versionshort-$update"
+                    SCHEMA="${versiontrimx}_${project}_$update"
+                    createBundle Branch
+                else
+                    if [ $version == '7.0.10' ]; then
+                        echo "REMINDER: DXP 7.0 is only compatible with MySQL 5.6 or 5.7. Please update Config -- see https://help.liferay.com/hc/en-us/articles/360015783792-Liferay-DXP-7-0-Compatibility-Matrix"
+                        if [[ $dbPort == '3306' ]]; then
+                            changeMysqlVersion
+                        else
+                            echo "INFO: dbPort is $dbPort"
+                        fi
+                        # liferay-dxp-digital-enterprise-tomcat-7.0-ga1/liferay-dxp-digital-enterprise-7.0-ga1
+                        SRC="$version/liferay-dxp-digital-enterprise-tomcat-$versionshort-ga1/liferay-dxp-digital-enterprise-$versionshort-ga1"
+                        
+                        BUNDLED="liferay-dxp-$version.dxp-$update"
+                        SCHEMA="${versiontrimx}_${project}_dxp${update}"
+                        createBundle $updateType
+                        
+                        # Manually place the MySQL JDBC connector since https issue
+                        tomcatdir=`cd ${PROJECTDIR}/$project/$BUNDLED && ls | grep tomcat`
+                        echo "DEBUG: tomcatdir is $tomcatdir"
+                        cp ${LRDIR}/mysql.jar ${PROJECTDIR}/$project/$BUNDLED/$tomcatdir/lib/ext/
+                        if [[ -e "${PROJECTDIR}/$project/$BUNDLED/$tomcatdir/lib/ext/mysql.jar" ]]; then
+                            echo -e "\tSUCCESS: MySQL JDBC connector jar placed at ${PROJECTDIR}/$project/$BUNDLED/$tomcatdir/lib/ext/mysql.jar"
+                        else
+                            echo -e "\tFAIL: Please manually place MySQL JDBC connector jar"
+                            xdg-open ${PROJECTDIR}/$project/$BUNDLED/$tomcatdir/lib/ext/
+                        fi
+                        # Start MySQL 5.7 and update port
+                        # dbdeployer deploy single 5.7
+                    else
+                        SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
+                        BUNDLED="liferay-dxp-$version.dxp-$update"
+                        SCHEMA="${versiontrimx}_${project}_dxp${update}"
+                        createBundle $updateType
+                    fi
+                fi
+                break
+            done
             break
             ;;
         "6.2" | "6.1")
@@ -266,40 +363,15 @@ select version in "${DXP[@]}"; do
             break
             ;;
         "Config")
-            echo "DBDeployer versions command:"
-            dbdeployer versions
-            # Send list of installed DBDeployer servers to .txt
-            # TODO: check if dbdeployer; if yes, use SANDBOX_HOME / if no, 3306?
-            mysqlserverlist=mysqlserverlist.txt
-            ls "${DBDEPLOYER_HOME}/servers/" > $mysqlserverlist
-            # Check if 3306 in server list, if not add
-            if grep -Fxq "3306" $mysqlserverlist
-                then
-                    echo -e "\tCHECK: 3306 already in $mysqlserverlist"
-                else
-                    echo -e "\tCHECK: 3306 not yet in $mysqlserverlist -- inserting 3306 as an option"
-                    echo -e "3306" >> $mysqlserverlist
-                fi
-            # Define array of available MySQL servers available to choose from  
-            mysqlarray=(`cat "$mysqlserverlist"`)
-
-            select mysqlserver in "${mysqlarray[@]}"; do
-                DBDserver_DIR=$DBDEPLOYER_HOME/servers/$mysqlserver/
-                # echo -e "\tThe DBDeployer server dir is $DBDserver_DIR"
-                # UPDATE portal-ext with selected server
-                sed -i "s!localhost:.*/SCHEMA!localhost:$mysqlserver/SCHEMA!g" ${LRDIR}/portal-ext.properties
-                echo -e "\tSUCCESS: Master portal-ext.properties updated! MySQL Server set at localhost:${mysqlserver}\n---\n"
-                if [ $mysqlserver == '3306' ]; then
-                    # This is on by default if mysql installed
-                    echo "Nothing else to do"
-                else
-                    # Start the DBDeployer server
-                    read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
-                    cd $DBDserver_DIR && ./start
-                fi
-
-                break
-            done
+            changeMysqlVersion
+            if [ $mysqlserver == '3306' ]; then
+                # This is on by default if mysql installed
+                echo "Nothing else to do"
+            else
+                # Start the DBDeployer server
+                read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
+                cd $DBDserver_DIR && ./start
+            fi
             exit
             ;;
         "Exit")
