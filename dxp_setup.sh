@@ -243,7 +243,11 @@ select version in "${DXP[@]}"; do
             done
             echo -e "\n---\n"
             if [ $update == 'master' ]; then
-                SRC="Branch/liferay-portal-tomcat-master-all/liferay-portal-master-all"
+                SRCTEST=(`find ${LRDIR}/Branch -maxdepth 2 -type d -name *portal-master* | sort -r | head -2`)
+                SRCRAW=${SRCTEST[0]}
+                SRC=$(echo $SRCRAW | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                echo -e "\tDEBUG: SRC location is $SRC"
+                # SRC="Branch/liferay-portal-tomcat-master-all/liferay-portal-master-all"
                 BUNDLED="liferay-dxp-$version-$update"
                 SCHEMA="${versiontrimx}_${project}_$update"
                 createBundle Branch
