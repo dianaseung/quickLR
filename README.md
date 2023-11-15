@@ -149,34 +149,33 @@ a). Open the MySQL prompt to alter root's password and then exit MySQL
 sudo mysql
 ```
 ```
-ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'liferay';
 exit
 ```
 b). Use the password set in a) to run the security script to change password, and follow the prompts. 
 ```
 sudo mysql_secure_installation
 ```
-
+If you want to allow low security password just for testing purposes, you can use the following to adjust the password policy:
+```
+SHOW VARIABLES LIKE 'validate_password%';
+SET GLOBAL validate_password.policy=LOW;
+SET GLOBAL validate_password.length=6;
+SET GLOBAL validate_password.mixed_case_count=0;
+SET GLOBAL validate_password.number_count=0;
+SET GLOBAL validate_password.special_char_count=0;
+```
 c). Open MySQL prompt to create MySQL user (replace 'user' with your own user) and set permissions
 ```
 sudo mysql
 ```
 ```
-CREATE USER 'user'@'localhost' IDENTIFIED BY 'password';
-GRANT ALL PRIVILEGES ON *.* TO 'sammy'@'localhost' WITH GRANT OPTION;
+CREATE USER 'dia'@'localhost' IDENTIFIED BY 'liferay';
+GRANT ALL PRIVILEGES ON *.* TO 'dia'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 exit
 ```
-e). Test if it works using one of the following:
-```
-systemctl status mysql.service
-```
-```
-sudo mysqladmin -p -u user version
-```
-
-
-### Setup: Add MySQL credentials to .my.cnf to avoid MySQL prompts
+e). MySQL credentials to .my.cnf to avoid MySQL prompts
 - Open the .my.cnf file
 ```
 nano ~/.my.cnf
@@ -189,12 +188,16 @@ nano ~/.my.cnf
 user=mysqluser
 password=mysqlpw
 ```
-
 - Ensure proper file permissions
 ```
 chmod 600 ~/.my.cnf 
 ```
 See for more configuration detail: https://www.inmotionhosting.com/support/server/databases/edit-mysql-my-cnf/
+
+f). Test if it works using one of the following:
+```
+mysql
+```
 
 ---
 
