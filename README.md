@@ -144,6 +144,7 @@ sudo systemctl start mysql.service
 ```
 - Set password 
 See https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-20-04 for more installation detail
+
 a). Open the MySQL prompt to alter root's password and then exit MySQL
 ```
 sudo mysql
@@ -152,11 +153,7 @@ sudo mysql
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'liferay';
 exit
 ```
-b). Use the password set in a) to run the security script to change password, and follow the prompts. 
-```
-sudo mysql_secure_installation
-```
-If you want to allow low security password just for testing purposes, you can use the following to adjust the password policy:
+If you want to allow low security password just for testing purposes, use the following commands before exiting to adjust the password policy:
 ```
 SHOW VARIABLES LIKE 'validate_password%';
 SET GLOBAL validate_password.policy=LOW;
@@ -164,6 +161,16 @@ SET GLOBAL validate_password.length=6;
 SET GLOBAL validate_password.mixed_case_count=0;
 SET GLOBAL validate_password.number_count=0;
 SET GLOBAL validate_password.special_char_count=0;
+```
+
+b). Use the password set in a) to run the security script to change password, and follow the prompts. 
+```
+sudo mysql_secure_installation
+```
+After running the security script, use the following to set back to auth_socket connection:
+```
+mysql -u root -p
+ALTER USER 'root'@'localhost' IDENTIFIED WITH auth_socket;
 ```
 c). Open MySQL prompt to create MySQL user (replace 'user' with your own user) and set permissions
 ```
