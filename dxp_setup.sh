@@ -81,8 +81,8 @@ createDB () {
         mysql -e "CREATE SCHEMA ${SCHEMA};"
         CHECKDB=`mysql -e "SHOW DATABASES" | grep $SCHEMA`
     else
-        mysql --socket=/tmp/mysql_sandbox$dbPort.sock --port $dbPort -u$DBDUSER -p$DBDPW -e "CREATE SCHEMA ${SCHEMA};"
-        CHECKDB=`mysql --socket=/tmp/mysql_sandbox$dbPort.sock --port $dbPort -u$DBDUSER -p$DBDPW -e 'SHOW DATABASES;' | grep ${SCHEMA}`
+        mysql --socket=/tmp/mysql_sandbox$dbPort.sock --port $dbPort -e "CREATE SCHEMA ${SCHEMA};"
+        CHECKDB=`mysql --socket=/tmp/mysql_sandbox$dbPort.sock --port $dbPort -e 'SHOW DATABASES;' | grep ${SCHEMA}`
     fi
     # echo -e "mysql -u${MYSQLUSER} -e "CREATE SCHEMA ${SCHEMA};"
     echo -e "\tCHECK: Checking if ${CHECKDB} exists on $dbPort"
@@ -327,10 +327,17 @@ select version in "${DXP[@]}"; do
                 else
                     if [ $version == '7.0.10' ]; then
                         # liferay-dxp-digital-enterprise-tomcat-7.0-ga1/liferay-dxp-digital-enterprise-7.0-ga1
-                        SRC="$version/liferay-dxp-digital-enterprise-tomcat-$versionshort-ga1/liferay-dxp-digital-enterprise-$versionshort-ga1"
+                        if [ $updateType = 'FP' ]; then
+                            SRC="$version/liferay-dxp-digital-enterprise-tomcat-$versionshort-ga1/liferay-dxp-digital-enterprise-$versionshort-ga1"
+                        elif [ $updateType = 'SP' ]; then
+                            # liferay-dxp-digital-enterprise-tomcat-7.0.10.17-sp17/liferay-dxp-digital-enterprise-7.0.10.17-sp17
+                            SRC="$version/liferay-dxp-digital-enterprise-tomcat-$version.$update-sp$update/liferay-dxp-digital-enterprise-$version.$update-sp$update"
+                        else 
+                            SRC="$version/liferay-dxp-digital-enterprise-tomcat-$versionshort-ga1/liferay-dxp-digital-enterprise-$versionshort-ga1"
+                        fi
                         
-                        BUNDLED="liferay-dxp-$version.dxp-$update"
-                        SCHEMA="${versiontrimx}_${project}_dxp${update}"
+                        BUNDLED="liferay-dxp-$version.$updateType-$update"
+                        SCHEMA="${versiontrimx}_${project}_$updateType${update}"
                         createBundle $updateType
                         
                         # Manually place the MySQL JDBC connector since https issue
