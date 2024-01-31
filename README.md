@@ -100,7 +100,7 @@ Sample Project directory ($PROJECTDIR)
     - Rename the xml licenses as DXP version names. ![See Liferay Licenses sample](/media/dir-license-sample.png)
 3. Setup portal-ext.properties file
     - Download [/sample/portal-ext.properties](/sample/portal-ext.properties) and place in `Liferay/DXP/` directory. 
-    - Update `DBUSER` and `DBPW` with MySQL credentials. 
+    - Do **not** edit `DBUSER` and `DBPW` keywords in the template file, it will be replaced with your MySQL credentials set below. 
     - Do **not** edit the `SCHEMA` keyword, as that will be auto-updated with the quickLR script.
 4. [Setup MySQL](#setup-install-mysql-server)
     - [Setup MySQL credentials in .my.cnf](#setup-edit-mycnf-for-mysql-credentials)
@@ -249,9 +249,9 @@ mysql
 
 ## Planned Upcoming Features
 - <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> curl Liferay bundle from releases-cdn.liferay.com and auto-extract -- if fails, check LRDIR for local files
-- <img src="https://img.shields.io/badge/Priority-Low-green" alt="High Priority" /> Automate quickLR setup via script (create directory structure via script, add quickLR env to bashrc via script)
+- <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> Automate quickLR setup via script (create directory structure via script, add quickLR env to bashrc via script)
 
-- <img src="https://img.shields.io/badge/Priority-High-red" alt="Medium Priority" /> [License & Target source] Find target source based on find/grep of $versiontrimx
+- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> [License & Target source] Find target source based on find/grep of $versiontrimx
 
 - <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> COMPLETED: Update to latest patching-tool available with any new bundle - P2: grep highest number dir
 - <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" />  COMPLETED: Add Config menu (implemented as ):
