@@ -11,8 +11,10 @@
 
 ## About QuickLR: Overview
 ---
-Linux bash script quickly sets up a basic Liferay Tomcat bundle and MySQL database for Liferay Support testing.
+Linux bash script quickly sets up a basic Liferay Tomcat bundle and MySQL database for Liferay Support testing from local files.
 Alternative to using Docker compose to setup a standard Liferay bundle
+
+Supports nightly, master, and official releases (Quarterly Release, DXP 7.4, DXP 7.3, DXP 7.2, DXP 7.1, and DXP 7.0)
 
 <p align="center">
 <img src="/media/quickLR-preview.gif" alt="Preview of quickLR script functionality" />
@@ -245,23 +247,23 @@ mysql
 
 ---
 
-## Upcoming Planned Features (v1.0)
-- <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> DBDeployer compatibility (Note: ./Liferay/MySQL/servers/####/use -u root) -- 1) create database based on MySQL server version, and 2) update portal-ext based on MySQL server version
-- <img src="https://img.shields.io/badge/Priority-High-red" alt="Medium Priority" /> Investigate whether Liferay bundles could be pulled via API or consider source code method - curl from VPN
-- <img src="https://img.shields.io/badge/Priority-High-red" alt="Medium Priority" /> [License & Target source] Find target source based on find/grep of $versiontrimx
-- <img src="https://img.shields.io/badge/Priority-Low-green" alt="Low Priority" /> Consider setting License, Branch and Patching directory in .bashrc
+## Planned Upcoming Features
+- <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> curl Liferay bundle from releases-cdn.liferay.com and auto-extract -- if fails, check LRDIR for local files
+- <img src="https://img.shields.io/badge/Priority-Low-green" alt="High Priority" /> Automate quickLR setup via script (create directory structure via script, add quickLR env to bashrc via script)
 
-## Possible v2.0 Features
-- <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> Automated script to check, move and rename new Liferay downloads (Update, SP, Fixpack) to appropriate Liferay folder upon download to Downloads folder (Alternatively, curl from VPN)
-- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> Update to latest patching-tool available with any new bundle - P2: grep highest number dir
-- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" />  Separate Config:
+- <img src="https://img.shields.io/badge/Priority-High-red" alt="Medium Priority" /> [License & Target source] Find target source based on find/grep of $versiontrimx
+
+- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> COMPLETED: Update to latest patching-tool available with any new bundle - P2: grep highest number dir
+- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" />  COMPLETED: Add Config menu (implemented as ):
     - Second bundle setup (update server.xml file ports from 8xxx to 9xxx, cp com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config file to /osgi/configs/) - Note: writing the functionality is easy, but need to figure out logic for how to add to script menu (maybe need to flesh out the config menu)
     - Copy `com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config` config file to /$LIFERAY_HOME/osgi/config/for remote elasticsearch setup
-- <img src="https://img.shields.io/badge/Priority-Low-green" alt="Low Priority" />  Fix Pack Support for Portal 6.2 and 6.1 (currently SP support only)
+- <img src="https://img.shields.io/badge/Priority-Low-green" alt="Low Priority" /> (Low Priority) Fix Pack Support for Portal 6.2 and 6.1 (currently SP support only)
 
 ---
 
 ## Update History
+- 1/30/24 - Updated for Quarterly Release format (including grabbing the highest number of Patching Tool available in {LRDIR}/Patching dir)
+- Q4 2023 - Changed config menu to be accessible under 'quickLR config' 
 - 5/11/23 - Updated installation instructions based on testing on clean Ubuntu VM install
 - 5/10/23 - Refactor: Updated createBundle function to accept parameter (Update, FP, Branch) to determine setup; Merged createBundle/createBranch/createFPBundle into single createBundle function
 - 5/6/23 - Added cleanup script to delete Project folders and databases if last modified older than set date (default 30)
