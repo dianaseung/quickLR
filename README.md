@@ -254,7 +254,7 @@ mysql
 - <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> [License & Target source] Find target source based on find/grep of $versiontrimx
 
 - <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> COMPLETED: Update to latest patching-tool available with any new bundle - P2: grep highest number dir
-- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" />  COMPLETED: Add Config menu (implemented as ):
+- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" />  COMPLETED: Add Config menu (implemented as 'quickLR config' terminal command):
     - Second bundle setup (update server.xml file ports from 8xxx to 9xxx, cp com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config file to /osgi/configs/) - Note: writing the functionality is easy, but need to figure out logic for how to add to script menu (maybe need to flesh out the config menu)
     - Copy `com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config` config file to /$LIFERAY_HOME/osgi/config/for remote elasticsearch setup
 - <img src="https://img.shields.io/badge/Priority-Low-green" alt="Low Priority" /> (Low Priority) Fix Pack Support for Portal 6.2 and 6.1 (currently SP support only)
