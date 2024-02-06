@@ -7,35 +7,35 @@
 # Date format to append for duplicate LR installs
 DATE=$(date +%y%m%d%H%M)
 
-# CHECK: GLOBAL VARIABLES (set in bashrc)
+# [CHECK] GLOBAL VARIABLES (set in bashrc)
 if [ -z ${LRDIR+x} ]; then
     echo "WARN: Please set LRDIR in ~/.bashrc first!"
     exit 1
 else
-    echo -e "\tCHECK: LRDIR is ${LRDIR}"
+    echo -e "[CHECK] LRDIR is ${LRDIR}"
 fi
 if [ -z ${PROJECTDIR+x} ]; then
     echo "WARN: Please set PROJECTDIR in ~/.bashrc first!"
     exit 1
 else
-    echo -e "\tCHECK: PROJECTDIR is ${PROJECTDIR}"
+    echo -e "[CHECK] PROJECTDIR is ${PROJECTDIR}"
 fi
 # if [ -z ${MYSQLUSER+x} ]; then
 #     echo "WARN: Please set MYSQLUSER in ~/.bashrc first!"
 #     exit 1
 # else
-#     echo "CHECK: MYSQLUSER is ${MYSQLUSER}"
+#     echo "[CHECK] MYSQLUSER is ${MYSQLUSER}"
 # fi
 
-# CHECK: MYSL DB VERSION/PORT in portal-ext.properties
+# [CHECK] MYSL DB VERSION/PORT in portal-ext.properties
 MYSQLPORTLN=$(grep 'jdbc.default.url' "${LRDIR}"/portal-ext.properties)
 propPrefix='jdbc.default.url=jdbc:mysql://localhost:'
 propSuffix='?characterEncoding=UTF-8&dontTrackOpenResources=true&holdResultsOpenOverStatementClose=true&serverTimezone=GMT&useFastDateParsing=false&useUnicode=true'
 dbNameA=${MYSQLPORTLN/$propPrefix/}
 dbNameB=${dbNameA/$propSuffix/}
 dbPort=${dbNameB%/*}
-echo -e "\tCHECK: Current MYSQL Port is $dbPort"
-echo -e "\t---"
+echo -e "[CHECK] Current MYSQL Port is $dbPort"
+echo -e "---"
 
 
 # --------------------------------------------------------------
@@ -46,9 +46,9 @@ checkDir () {
     if [ -d "${PROJECTDIR}"/"${project}"/"${BUNDLED}" ]; then
         BUNDLED="${BUNDLED}.${DATE}"
         SCHEMA="${SCHEMA}_${DATE}"
-        echo -e "\tWARNING: Project $project with $1 $update folder already exists! Appending date..."
+        echo -e "WARNING: Project $project with $1 $update folder already exists! Appending date..."
     else
-        echo -e "\tCHECK: Project $project with $1 $update folder does not exist yet!"
+        echo -e "[CHECK] Project $project with $1 $update folder does not exist yet!"
     fi
 }
 
@@ -65,27 +65,27 @@ updatePatchingTool () {
         PATCHDIRRAW=${FINDPATCHDIR[-1]}
         PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
         cp -rf "${LRDIR}"/$PATCHDIR/patching-tool/ "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/
-        echo -e "\tSUCCESS: Updated the Patching Tool folder to $PATCHDIR"
+        echo -e "[SUCCESS] Updated the Patching Tool folder to $PATCHDIR"
     elif [[ $version == "7.4.13" ]] || [[ $version == "7.3.10" ]]; then
         # v3.0.37 PATCHING TOOL
         FINDPATCHDIR=($(find "${LRDIR}"/Patching -maxdepth 2 -type d -name patching-tool-3.0.* | sort -n | head -2))
         PATCHDIRRAW=${FINDPATCHDIR[-1]}
         PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
         cp -rf "${LRDIR}"/$PATCHDIR/patching-tool/ "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/
-        echo -e "\tSUCCESS: Updated the Patching Tool folder to $PATCHDIR"
+        echo -e "[SUCCESS] Updated the Patching Tool folder to $PATCHDIR"
     else
         # v2.0.16 PATCHING TOOL
         FINDPATCHDIR=($(find "${LRDIR}"/Patching -maxdepth 2 -type d -name patching-tool-2.0.* | sort -n | head -2))
         PATCHDIRRAW=${FINDPATCHDIR[-1]}
         PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
         cp -r "${LRDIR}"/$PATCHDIR/patching-tool/ "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/
-        echo -e "\tSUCCESS: Updated the Patching Tool folder to $PATCHDIR"
+        echo -e "[SUCCESS] Updated the Patching Tool folder to $PATCHDIR"
     fi
 }
 
 createDB () {
     # MAKE THE MYSQL SCHEMA
-    echo -e "\tStarting to create MySQL database..."
+    echo -e "Starting to create MySQL database..."
     if [[ $dbPort == '3306' ]]; then
         mysql -e "CREATE SCHEMA ${SCHEMA};"
         CHECKDB=$(mysql -e "SHOW DATABASES" | grep "$SCHEMA")
@@ -94,12 +94,12 @@ createDB () {
         CHECKDB=$(mysql --socket=/tmp/mysql_sandbox"$dbPort".sock --port "$dbPort" -e 'SHOW DATABASES;' | grep "${SCHEMA}")
     fi
     # echo -e "mysql -u${MYSQLUSER} -e "CREATE SCHEMA ${SCHEMA};"
-    echo -e "\tCHECK: Checking if ${CHECKDB} exists on $dbPort"
+    echo -e "[CHECK] Checking if ${CHECKDB} exists on $dbPort"
     # TODO: fix case sensitivity
     if [[ $CHECKDB == "$SCHEMA" ]]; then
-        echo -e "\tSUCCESS: Created database ${SCHEMA}"
+        echo -e "[SUCCESS] Created database ${SCHEMA}"
     else
-        echo -e "\tFAIL: Database ${SCHEMA} not created. Please create manually."
+        echo -e "[ERROR] Database ${SCHEMA} not created. Please create manually."
     fi
 }
 
@@ -113,12 +113,12 @@ updatePortalExtDB () {
         sed -i "s/DBUSER/$DBDUSER/g" "${PROJECTDIR}"/"$project"/"$BUNDLED"/portal-ext.properties
         sed -i "s/DBPW/$DBDPW/g" "${PROJECTDIR}"/"$project"/"$BUNDLED"/portal-ext.properties
         # sed -i "s!localhost:.*/SCHEMA!localhost:$mysqlserver/SCHEMA!g" ${LRDIR}/portal-ext.properties
-        echo -e "\tSUCCESS: Portal-ext changed for 7.0 MySQL, DBDeployer login used"
+        echo -e "[SUCCESS] Portal-ext changed for 7.0 MySQL, DBDeployer login used"
     else
         sed -i "s/DBUSER/$MYSQLUSER/g" "${PROJECTDIR}"/"$project"/"$BUNDLED"/portal-ext.properties
         sed -i "s/DBPW/$MYSQLPW/g" "${PROJECTDIR}"/"$project"/"$BUNDLED"/portal-ext.properties
     fi
-    echo -e "\tSUCCESS: Updated portal-ext.properties with $SCHEMA"
+    echo -e "[SUCCESS] Updated portal-ext.properties with $SCHEMA"
 }
 
 patchInstall () {
@@ -132,42 +132,110 @@ patchInstall () {
     cp "${LRDIR}"/"$version"/FP/"$FPZIP" "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/patches/
     # If FP copied properly, then install 
     if [ -e "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/patches/"$FPZIP" ]; then
-        echo -e "\tSUCCESS: Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP\n\tStarting Fix Pack Installation...\n---\n"
+        echo -e "[SUCCESS] Fix Pack placed in ${PROJECTDIR}/$project/$BUNDLED/patching-tool/patches/$FPZIP\n\tStarting Fix Pack Installation...\n---\n"
         ( cd "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/ && ./patching-tool.sh install && ./patching-tool.sh info)
         # CLEAN TEMP FILES
         ( cd "${PROJECTDIR}"/"$project"/"$BUNDLED" && lrclean)
-        echo -e "\n---\n\tSUCCESS: Fix Pack dxp-$update install completed! Temp Folders cleaned"
+        echo -e "\n---\n\t[SUCCESS] Fix Pack dxp-$update install completed! Temp Folders cleaned"
     else
-        echo -e "\tFAIL: Fix Pack not placed. Please manually install Fix Pack."
+        echo -e "[ERROR] Fix Pack not placed. Please manually install Fix Pack."
         xdg-open "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/
+    fi
+}
+
+curlCheck () {
+    status="$(curl -Is https://releases-cdn.liferay.com/ | head -1)"
+    validate=( $status )
+    if [ ${validate[-2]} == "200" ]; then
+        echo "OK"
+        downloadBundle
+    else
+        echo "NOT RESPONDING -- Please authenticate or place a local copy of the bundle"
+    fi
+}
+
+downloadBundle () {
+    # wget -r -np -nH -A "IMG[012][0-9].jpg" http://x.com/y/z/ 
+    # liferay-dxp-tomcat-2023.q4.0-1701894289.7z
+    dl_rename=liferay-dxp-tomcat-$update
+    echo -e "\n---\nFile will be downloaded to $LRDIR/$version (Indexes will be auto
+    
+    DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$update"-*.tar.gz | sort -r | head -2)
+    for key in "${!DL_FIND[@]}"
+        do
+        echo -e "Key is '$key'  => Value is '${DL_FIND[$key]}'"
+        done
+    # SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *nightly* | sort -r | head -2))
+    DL_GRAB=${DL_FIND[0]}
+    echo -e "DL_GRAB: $DL_GRAB"
+    DL_RESULT=$(echo "$DL_GRAB" | sed -e "s!/home/dia/Downloads/Liferay/DXP/$version/!!g")
+    echo -e "DL_RESULT: $DL_RESULT"
+    if [[ -f "$LRDIR/$version/$DL_RESULT" ]]; then
+        case "$DL_RESULT" in
+            *.tar.gz)
+            echo "LR $version $update file finished downloading in $LRDIR/$version/$DL_RESULT"
+            mkdir "${LRDIR}"/"$version"/"$BUNDLED"
+            if [[ -e "${LRDIR}/$version/$BUNDLED" ]]; then
+                tar -xf "$LRDIR"/"$version"/"$DL_RESULT" -C "${LRDIR}"/"$version"/"$BUNDLED"
+                echo -e "[DEBUG]: File $LRDIR/$version/$DL_RESULT was extracted to $LRDIR/$version/$BUNDLED"
+
+            else
+                echo -e "[ERROR]: Not properly extracted, manually extract"
+            fi
+            # rm "$LRDIR/$version/$DL_RESULT"
+            ;;
+            *)
+            echo "Unknown file format in $DL_RESULT"
+            ;;
+        esac
+    else
+        echo "File not written to disk: $DL_RESULT"
     fi
 }
 
 createBundle () {
     checkDir "$1"
+    if [ -d "${LRDIR}"/"$SRC" ]; then
+        echo "[CHECK] SRC Directory exists."
+        echo "[DEBUG]: copying from $LRDIR/$SRC"
+        cp -r "${LRDIR}"/"$SRC" "${PROJECTDIR}"/"$project"/"$BUNDLED"
+    else
+        echo "[CHECK] SRC Directory doesn't exist. Attempting download from releases-cdn.liferay.com..."
+        curlCheck
+        if [[ $1 == 'QR' ]]; then
+            echo "[DEBUG]: copying from $LRDIR/$version/$BUNDLED/liferay-dxp"
+            cp -r "${LRDIR}"/"$version"/"$BUNDLED"/liferay-dxp/ "${PROJECTDIR}"/"$project"/"$BUNDLED"
+        else
+            SRCTEST=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$update"* | sort -r | head -2)
+            RCRAW=${SRCTEST[0]}
+            echo "SRCRAW: $SRCRAW"
+            PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+            SRC=$PRESRC/liferay-dxp/
+            cp -r "${LRDIR}"/"$SRC"/ "${PROJECTDIR}"/"$project"/"$BUNDLED"
+        fi
+    fi
     # CREATE FOLDER
-    cp -r "${LRDIR}"/"$SRC" "${PROJECTDIR}"/"$project"/"$BUNDLED"
     if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
-        echo -e "\tSUCCESS: DXP $version $1 $update folder created at $project/$BUNDLED"
+        echo -e "[SUCCESS] DXP $version $1 $update folder created at $project/$BUNDLED"
         # Install Portal-Ext - Always Needed
         cp "${LRDIR}"/portal-ext.properties "${PROJECTDIR}"/"$project"/"$BUNDLED"/
         if [[ -e ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]]; then
-            echo -e "\tSUCCESS: Portal-ext placed"
+            echo -e "[SUCCESS] Portal-ext placed"
         else
-            echo -e "\tFAIL: Please manually place portal-ext files"
+            echo -e "[ERROR] Please manually place portal-ext files"
             xdg-open "${PROJECTDIR}"/"$project"/"$BUNDLED"/
         fi
         # Install License - Only if !branch / + Update Patching Tool, Create DB, Update Portal-Ext
         if [[ $1 == 'Branch' ]]; then
-            echo -e "\tINFO: No license needed for Branch/Master"
+            echo -e "INFO: No license needed for Branch/Master"
             createDB
             updatePortalExtDB
         elif [[ $1 == 'FP' ]]; then
             cp "${LRDIR}"/License/"$version".xml "${PROJECTDIR}"/"$project"/"$BUNDLED"/deploy/
             if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml ]]; then
-                echo -e "\tSUCCESS: License placed"
+                echo -e "[SUCCESS] License placed"
             else
-                echo -e "\tFAIL: Please manually place license files"
+                echo -e "[ERROR] Please manually place license files"
                 xdg-open "${PROJECTDIR}"/"$project"/"$BUNDLED"/deploy/
             fi
             # Update Patching Tool - Only if FP
@@ -178,9 +246,9 @@ createBundle () {
         elif [[ $1 == 'QR' ]]; then
             cp "${LRDIR}"/License/7.4.13.xml "${PROJECTDIR}"/"$project"/"$BUNDLED"/deploy/
             if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/7.4.13.xml ]]; then
-                echo -e "\tSUCCESS: License placed"
+                echo -e "[SUCCESS] License placed"
             else
-                echo -e "\tFAIL: Please manually place license files"
+                echo -e "[ERROR] Please manually place license files"
                 xdg-open "${PROJECTDIR}"/"$project"/"$BUNDLED"/deploy/
             fi
             updatePatchingTool
@@ -189,30 +257,30 @@ createBundle () {
         else
             cp "${LRDIR}"/License/"$version".xml "${PROJECTDIR}"/"$project"/"$BUNDLED"/deploy/
             if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml ]]; then
-                echo -e "\tSUCCESS: License placed"
+                echo -e "[SUCCESS] License placed"
             else
-                echo -e "\tFAIL: Please manually place license files"
+                echo -e "[ERROR] Please manually place license files"
                 xdg-open "${PROJECTDIR}"/"$project"/"$BUNDLED"/deploy/
             fi
             updatePatchingTool
             createDB
             updatePortalExtDB
         fi
-        echo -e "\tSUCCESS: Completed setup of $project/$BUNDLED"
+        echo -e "[SUCCESS] Completed setup of $project/$BUNDLED"
         echo -e "\n---\n"
         # START BUNDLE OR EXIT SCRIPT
         read -rsn1 -p"Press any key to start $BUNDLED bundle... or Ctrl-C to exit";echo
         cd "${PROJECTDIR}"/"$project"/"$BUNDLED"/tomcat*/bin/ && ./catalina.sh run
     else
-        echo -e "\tFAIL: Folder not created"
-        echo -e "\tDEBUG: Source ${LRDIR}/${SRC}"
-        echo -e "\tDEBUG: Destination ${PROJECTDIR}/$project/$BUNDLED"
+        echo -e "[ERROR] Folder not created"
+        echo -e "[DEBUG] Source ${LRDIR}/${SRC}"
+        echo -e "[DEBUG] Destination ${PROJECTDIR}/$project/$BUNDLED"
     fi
 }
 
 changeMysqlVersion () {
-        echo -e "\tCHECK: Current MYSQL Port is $dbPort"
-        echo -e "\tAvailable DBDeployer versions:"
+        echo -e "[CHECK] Current MYSQL Port is $dbPort"
+        echo -e "Available DBDeployer versions:"
         dbdeployer versions
         # Send list of installed DBDeployer servers to .txt
         # TODO: check if dbdeployer; if yes, use SANDBOX_HOME / if no, 3306?
@@ -221,22 +289,22 @@ changeMysqlVersion () {
         # Check if 3306 in server list, if not add
         if grep -Fxq "3306" $mysqlserverlist
             then
-                echo -e "\tCHECK: 3306 already in $mysqlserverlist"
+                echo -e "[CHECK] 3306 already in $mysqlserverlist"
             else
-                echo -e "\tCHECK: 3306 not in $mysqlserverlist -- inserting 3306 as option"
+                echo -e "[CHECK] 3306 not in $mysqlserverlist -- inserting 3306 as option"
                 echo -e "3306" >> $mysqlserverlist
             fi
-        echo -e "\t---\n"
+        echo -e "---\n"
         # Define array of available MySQL servers available to choose from  
         mysqlarray=($(cat "$mysqlserverlist"))
 
         echo -e "[SELECT] Choose DBDeployer MySQL server"
         select mysqlserver in "${mysqlarray[@]}"; do
             DBDserver_DIR=$DBDEPLOYER_HOME/servers/$mysqlserver/
-            # echo -e "\tThe DBDeployer server dir is $DBDserver_DIR"
+            # echo -e "The DBDeployer server dir is $DBDserver_DIR"
             # UPDATE portal-ext with selected server
             sed -i "s!localhost:.*/SCHEMA!localhost:$mysqlserver/SCHEMA!g" "${LRDIR}"/portal-ext.properties
-            echo -e "\tSUCCESS: master portal-ext.properties updated! localhost:${mysqlserver}"
+            echo -e "[SUCCESS] master portal-ext.properties updated! localhost:${mysqlserver}"
             break
         done
         MYSQLPORTLN=$(grep 'jdbc.default.url' "${LRDIR}"/portal-ext.properties)
@@ -245,7 +313,7 @@ changeMysqlVersion () {
         dbNameA=${MYSQLPORTLN/$propPrefix/}
         dbNameB=${dbNameA/$propSuffix/}
         dbPort=${dbNameB%/*}
-        echo -e "\tCHECK: Current MYSQL Port is $dbPort\n---\n"
+        echo -e "[CHECK] Current MYSQL Port is $dbPort\n---\n"
     }
 
     setDLR () {
@@ -253,7 +321,7 @@ changeMysqlVersion () {
         select dlr_choice in "y" "n"; do
             dlr_status=$DBDEPLOYER_HOME/servers/$mysqlserver/
             sed -i "s!localhost:.*/SCHEMA!localhost:$mysqlserver/SCHEMA!g" "${LRDIR}"/portal-ext.properties
-            echo -e "\tSUCCESS: master portal-ext.properties updated! localhost:${mysqlserver}"
+            echo -e "[SUCCESS] master portal-ext.properties updated! localhost:${mysqlserver}"
             break
         done
     }
@@ -269,7 +337,7 @@ if [[ $1 == "config" ]]; then
                 changeMysqlVersion
                 if [ "$mysqlserver" == '3306' ]; then
                     # This is on by default if mysql installed
-                    echo -e "\tMySQL update complete"
+                    echo -e "MySQL update complete"
                 else
                     # Start the DBDeployer server
                     read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
@@ -286,23 +354,26 @@ if [[ $1 == "config" ]]; then
                 ;;
         esac
     done
+elif [[ $1 == "clean" ]]; then
+    echo "Running cleanup script"
+    sh ./cleanup.sh
+    echo "Finished running cleanup"
 
 elif [[ $# -eq 0 ]]; then
     # if no positional parameter or any other arg given
-    echo -e "\tCtrl-C and Run 'quickLR config' to change config settings"
-    echo -e "\t---\n"
+    echo -e "Ctrl-C and Run 'quickLR config' to change config settings"
+    echo -e "---\n"
 
     # NAME THE PROJECT DIR
     read -p 'Project Code: ' project
     mkdir -p "${PROJECTDIR}"/"$project"/
     if [[ -e "${PROJECTDIR}"/"$project"/ ]]; then
-        echo -e "SUCCESS: Project created at ${PROJECTDIR}/$project/"
+        echo -e "[SUCCESS] Project started at ${PROJECTDIR}/$project/"
     else
         echo -e "ERROR: Project dir not created. Please manually make dir."
         xdg-open "${PROJECTDIR}"
+        break
     fi
-
-
 
     # Select DXP version
     echo -e "\n---\n[SELECT] Choose Liferay version to install:"
@@ -314,13 +385,13 @@ elif [[ $# -eq 0 ]]; then
                 if ! [[ $dbPort == '3306' ]]; then
                     changeMysqlVersion
                 else
-                    echo "INFO: dbPort is $dbPort"
+                    echo -e "\n---\nINFO: dbPort is $dbPort"
                 fi
                 versiontrimx=${version// }
                 read -p "Select DXP 7.4 $version patch level: " update
                 numcheck='^[0-9]+\.q[0-9]+\.[0-9]+'
                 until [[ $update =~ ($numcheck) ]]; do
-                    echo -e "\tERROR: Invalid Input. Valid Inputs: YYYY.q#.# (ie 2023.q3.0)\n"
+                    echo -e "ERROR: Invalid Input. Valid Inputs: YYYY.q#.# (ie 2023.q3.0)\n"
                     read -p "Select DXP $version patch level (Update): " update
                 done
                 updatemysql=${update//./}
@@ -329,8 +400,7 @@ elif [[ $# -eq 0 ]]; then
                     SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *portal-master* | sort -r | head -2))
                     SRCRAW=${SRCTEST[0]}
                     SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    echo -e "\tDEBUG: SRC location is $SRC"
-                    # SRC="Branch/liferay-portal-tomcat-master-all/liferay-portal-master-all"
+                    echo -e "[DEBUG] SRC location is $SRC"
                     BUNDLED="liferay-dxp-$version-$update"
                     SCHEMA="${versiontrimx}_${project}_$update"
                     createBundle Branch
@@ -338,28 +408,18 @@ elif [[ $# -eq 0 ]]; then
                     SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *nightly* | sort -r | head -2))
                     SRCRAW=${SRCTEST[0]}
                     SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    echo -e "\tDEBUG: SRC location is $SRC"
-                    # SRC="Branch/liferay-dxp-tomcat-7.4.13.nightly/liferay-portal-7.4.13.nightly"
+                    echo -e "[DEBUG] SRC location is $SRC"
                     BUNDLED="liferay-dxp-$version-$update"
                     SCHEMA="${versiontrimx}_${project}_$update"
                     createBundle Branch
-                elif [ "$update" == 'q3' ] || [ "$update" == 'q4' ]; then
-                    SRCTEST=($(find "${LRDIR}"/7.4.13 -maxdepth 2 -type d -name liferay-dxp-tomcat-*"$update"* | sort -r | head -2))
-                    SRCRAW=${SRCTEST[0]}
-                    SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    # SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
-                    # liferay-dxp-tomcat-2023.q4.0-1701894289
-                    BUNDLED="liferay-dxp-tomcat-2023.$update"
-                    SCHEMA="${versiontrimx}_${project}_U${update}"
-                    createBundle Update
                 else
-                    SRCTEST=($(find "${LRDIR}"/7.4.13 -maxdepth 2 -type d -name liferay-dxp-tomcat-*"$update"* | sort -r | head -2))
+                    echo -e "[DEBUG]: Finding SRC in $LRDIR/$version"
+                    SRCTEST=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$update"* | sort -r | head -2)
                     SRCRAW=${SRCTEST[0]}
-                    # echo -e "DEBUG: SRCTEST0 - ${SRCTEST[0]} \n SRCTEST1 - ${SRCTEST[1]}"
+                    echo "SRCRAW: $SRCRAW"
                     PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
                     SRC=$PRESRC/liferay-dxp/
-                    echo -e "\tDEBUG: SRC location is $SRC"
-                    # SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
+                    echo -e "[DEBUG] SRC location is $SRC"
                     BUNDLED="liferay-dxp-tomcat-$update"
                     SCHEMA="QR_${project}_${updatemysql}"
                     createBundle QR
@@ -376,7 +436,7 @@ elif [[ $# -eq 0 ]]; then
                 read -p "Select DXP $version patch level: " update
                 numcheck='^[0-9]+$'
                 until [[ $update =~ ($numcheck|master|night|q3|q4) ]]; do
-                    echo -e "\tERROR: Invalid Input. Valid Inputs: Update or master.\n"
+                    echo -e "ERROR: Invalid Input. Valid Inputs: Update or master.\n"
                     read -p "Select DXP $version patch level (Update): " update
                 done
                 echo -e "\n---\n"
@@ -384,7 +444,7 @@ elif [[ $# -eq 0 ]]; then
                     SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *portal-master* | sort -r | head -2))
                     SRCRAW=${SRCTEST[0]}
                     SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    echo -e "\tDEBUG: SRC location is $SRC"
+                    echo -e "[DEBUG] SRC location is $SRC"
                     # SRC="Branch/liferay-portal-tomcat-master-all/liferay-portal-master-all"
                     BUNDLED="liferay-dxp-$version-$update"
                     SCHEMA="${versiontrimx}_${project}_$update"
@@ -393,7 +453,7 @@ elif [[ $# -eq 0 ]]; then
                     SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *nightly* | sort -r | head -2))
                     SRCRAW=${SRCTEST[0]}
                     SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    echo -e "\tDEBUG: SRC location is $SRC"
+                    echo -e "[DEBUG] SRC location is $SRC"
                     # SRC="Branch/liferay-dxp-tomcat-7.4.13.nightly/liferay-portal-7.4.13.nightly"
                     BUNDLED="liferay-dxp-$version-$update"
                     SCHEMA="${versiontrimx}_${project}_$update"
@@ -459,21 +519,21 @@ elif [[ $# -eq 0 ]]; then
                 ;;
             "7.2.10" | "7.1.10" | "7.0.10")
                 if [ "$version" == '7.0.10' ]; then
-                    echo -e "\tWARN: Update Config - DXP 7.0 is only compatible with MySQL 5.6 or 5.7."
+                    echo -e "WARN: Update Config - DXP 7.0 is only compatible with MySQL 5.6 or 5.7."
                     if [[ $dbPort == '3306' ]]; then
                         changeMysqlVersion
                     else
-                        echo -e "\tINFO: dbPort is $dbPort"
+                        echo -e "INFO: dbPort is $dbPort"
                     fi
                 else
-                    echo -e "\tINFO: dbPort is $dbPort"
+                    echo -e "INFO: dbPort is $dbPort"
                 fi
                 versiontrimx=${versiontrim//10}
                 versionshort=${version//.10}
                 updateTypeList=("Update" "FP" "SP" "Branch")
                 echo -e "[SELECT] Choose an Update Type:"
                 select updateType in "${updateTypeList[@]}"; do
-                    echo -e "\tCHECK: UpdateType set as $updateType\n---\n"
+                    echo -e "[CHECK] UpdateType set as $updateType\n---\n"
                     read -p "Select DXP $version patch level: ($updateType)" update
                     numcheck='^[0-9]+$'
                     until [[ $update =~ ($numcheck|branch) ]]; do
@@ -505,12 +565,12 @@ elif [[ $# -eq 0 ]]; then
                             
                             # Manually place the MySQL JDBC connector since https issue
                             tomcatdir=$(cd "${PROJECTDIR}"/"$project"/"$BUNDLED" && ls | grep tomcat)
-                            echo -e "\tINFO: tomcatdir is $tomcatdir"
+                            echo -e "INFO: tomcatdir is $tomcatdir"
                             cp "${LRDIR}"/mysql.jar "${PROJECTDIR}"/"$project"/"$BUNDLED"/"$tomcatdir"/lib/ext/
                             if [[ -e "${PROJECTDIR}/$project/$BUNDLED/$tomcatdir/lib/ext/mysql.jar" ]]; then
-                                echo -e "\tSUCCESS: MySQL JDBC connector placed at $tomcatdir/lib/ext/mysql.jar"
+                                echo -e "[SUCCESS] MySQL JDBC connector placed at $tomcatdir/lib/ext/mysql.jar"
                             else
-                                echo -e "\tFAIL: Please manually place MySQL JDBC connector jar"
+                                echo -e "[ERROR] Please manually place MySQL JDBC connector jar"
                                 xdg-open "${PROJECTDIR}"/"$project"/"$BUNDLED"/"$tomcatdir"/lib/ext/
                             fi
                             # Start MySQL 5.7 and update port
@@ -539,7 +599,7 @@ elif [[ $# -eq 0 ]]; then
                 read -p "Select Portal $version patch level (SP #): " update
                 numcheck='^[0-9]+$'
                 until [[ $update =~ ($numcheck|branch) ]]; do
-                    echo -e "\tERROR: Invalid Input. Valid Inputs: SP # or branch\n"
+                    echo -e "ERROR: Invalid Input. Valid Inputs: SP # or branch\n"
                     read -p "Select Portal $version patch level: " update
                 done
                 echo -e "\n---\n"
@@ -547,9 +607,9 @@ elif [[ $# -eq 0 ]]; then
                 # declare -A fixpacks
                 # fixpacks=( ["SP20"]=154 ["SP19"]=148 ["SP18"]=138)
                 if (( $update > 20 )); then
-                    echo -e "\tWARN: Service Pack needed, no fix pack support yet."
+                    echo -e "WARN: Service Pack needed, no fix pack support yet."
                 elif [ "$update" == 'branch' ]; then
-                    echo -e "\tWARN: No branch support yet for Portal 6.2 or 6.1"
+                    echo -e "WARN: No branch support yet for Portal 6.2 or 6.1"
                 else
                     echo "Ok, setting up a $project folder with Portal $version SP $update bundle..."
                     SRC="$version/liferay-portal-tomcat-$version-ee-sp$update/liferay-portal-$version-ee-sp$update"
