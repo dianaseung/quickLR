@@ -158,8 +158,7 @@ downloadBundle () {
     # wget -r -np -nH -A "IMG[012][0-9].jpg" http://x.com/y/z/ 
     # liferay-dxp-tomcat-2023.q4.0-1701894289.7z
     dl_rename=liferay-dxp-tomcat-$update
-    echo -e "\n---\nFile will be downloaded to $LRDIR/$version (Indexes will be auto
-    
+    echo -e "\n---\nFile will be downloaded to $LRDIR/$version (Indexes will be auto-rejected)"
     DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$update"-*.tar.gz | sort -r | head -2)
     for key in "${!DL_FIND[@]}"
         do
