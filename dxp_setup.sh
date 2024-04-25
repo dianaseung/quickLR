@@ -260,73 +260,75 @@ curlCheck () {
     fi
 }
 
-downloadBundle () {
-    echo -e "\n---\nFile will be downloaded to $LRDIR/$version (Indexes will be auto-rejected)"
-
-    if [[ $version == 'Quarterly Release' ]]; then
-        wget -r -np -nd -nH -q --show-progress -A liferay-dxp-tomcat-$update-*.tar.gz https://releases-cdn.liferay.com/dxp/$update/ -P $LRDIR/"$version"
-    elif [[ $version == '7.4.13' ]]; then
-        # https://releases-cdn.liferay.com/dxp/7.4.13-u92/liferay-dxp-tomcat-7.4.13.u92-20230831122532583.tar.gz
-        wget -r -np -nd -nH -q --show-progress -A liferay-dxp-tomcat-7.4.13.u$update-*.zip https://releases-cdn.liferay.com/dxp/7.4.13-u$update/ -P $LRDIR/"$version"
-    else
-        wget -r -np -nd -nH -q --show-progress -A liferay-dxp-tomcat-$version.u$update-*.zip https://releases-cdn.liferay.com/dxp/$version-u$update/
-    fi
-
-
+extractBundle () {
+    # First search for the archive file (whether zip or tar.gz) to extract
     if [[ $update == 'nightly' ]]; then
+        # This may need to be updated -- double check latest nightly syntax
         DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-7.4.13."$update"-*.* | sort -r | head -2)
-    elif [[ $version == '7.4.13' ]]; then
-        # liferay-dxp-tomcat-7.4.13.u72-20230411073845082.zip
-        DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-7.4.13.u"$update"-*.zip | sort -r | head -2)
     elif [[ $version == 'Quarterly Release' ]]; then
         DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$update"-*.* | sort -r | head -2)
     else
+        echo -e "[DEBUG]: Searching in $LRDIR/$version... Looking for liferay-dxp-tomcat-$version.u"$update"-*.*"
+        xdg-open $LRDIR/$version
         DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-$version.u"$update"-*.* | sort -r | head -2)
     fi
-
+    # For debugging purposes: Display the found file
     for key in "${!DL_FIND[@]}"
         do
-        echo -e "Key is '$key'  => Value is '${DL_FIND[$key]}'"
+        echo -e "[DEBUG]: Key is '$key'  => Value is '${DL_FIND[$key]}'"
         done
-    # SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *nightly* | sort -r | head -2))
+    # Select the first result; ideally there should only be one result
     DL_GRAB=${DL_FIND[0]}
-    echo -e "DL_GRAB: $DL_GRAB"
+    echo -e "[DEBUG]: DL_GRAB: $DL_GRAB"
     DL_RESULT=$(echo "$DL_GRAB" | sed -e "s!/home/dia/Downloads/Liferay/DXP/$version/!!g")
-    echo -e "DL_RESULT: $DL_RESULT"
+    echo -e "[DEBUG]: DL_RESULT: $DL_RESULT"
+
+    # Extract the file depending if it's .tar.gz or .zip (all other formats invalidated)
     if [[ -f "$LRDIR/$version/$DL_RESULT" ]]; then
         case "$DL_RESULT" in
             *.tar.gz)
-            echo "LR $version $update file finished downloading in $LRDIR/$version/$DL_RESULT"
-            mkdir "${LRDIR}"/"$version"/"$BUNDLED"
-            if [[ -e "${LRDIR}/$version/$BUNDLED" ]]; then
-                tar -xf "$LRDIR"/"$version"/"$DL_RESULT" -C "${LRDIR}"/"$version"/"$BUNDLED"
-                echo -e "[DEBUG]: File $LRDIR/$version/$DL_RESULT was extracted to $LRDIR/$version/$BUNDLED"
-
-            else
-                echo -e "[ERROR]: Not properly extracted, manually extract"
-            fi
-            # rm "$LRDIR/$version/$DL_RESULT"
-            ;;
+                echo "LR $version $update file finished downloading in $LRDIR/$version/$DL_RESULT"
+                mkdir "${LRDIR}"/"$version"/"$BUNDLED"
+                echo -e "[DEBUG]: Extracting to $LRDIR/$version/$BUNDLED..."
+                if [[ -e "${LRDIR}/$version/$BUNDLED" ]]; then
+                    tar xf "$LRDIR"/"$version"/"$DL_RESULT" -C "${LRDIR}"/"$version"/"$BUNDLED"
+                    echo -e "[DEBUG]: File $LRDIR/$version/$DL_RESULT was extracted to $LRDIR/$version/$BUNDLED\n---\n"
+                    echo -e "[DEBUG]: Check BUNDLED = $BUNDLED \n(Why did it change?)"
+                else
+                    echo -e "[ERROR]: Not properly extracted, manually extract"
+                fi
+                # rm "$LRDIR/$version/$DL_RESULT"
+                ;;
             *.zip)
-            echo "LR $version $update file finished downloading in $LRDIR/$version/$DL_RESULT"
-            mkdir "${LRDIR}"/"$version"/"$BUNDLED"
-            if [[ -e "${LRDIR}/$version/$BUNDLED" ]]; then
-                # unzip filename.zip -d /path/to/directory
-                unzip -q "$LRDIR"/"$version"/"$DL_RESULT" -d "${LRDIR}"/"$version"/"$BUNDLED"
-                echo -e "[DEBUG]: File $LRDIR/$version/$DL_RESULT was extracted to $LRDIR/$version/$BUNDLED"
+                echo "LR $version $update file finished downloading in $LRDIR/$version/$DL_RESULT"
+                mkdir "${LRDIR}"/"$version"/"$BUNDLED"
+                if [[ -e "${LRDIR}/$version/$BUNDLED" ]]; then
+                    # unzip filename.zip -d /path/to/directory
+                    unzip -q "$LRDIR"/"$version"/"$DL_RESULT" -d "${LRDIR}"/"$version"/"$BUNDLED"
+                    echo -e "[DEBUG]: File $LRDIR/$version/$DL_RESULT was extracted to $LRDIR/$version/$BUNDLED"
 
-            else
-                echo -e "[ERROR]: Not properly extracted, manually extract"
-            fi
-            # rm "$LRDIR/$version/$DL_RESULT"
-            ;;
+                else
+                    echo -e "[ERROR]: Not properly extracted, manually extract"
+                fi
+                # rm "$LRDIR/$version/$DL_RESULT"
+                ;;
             *)
-            echo "Unknown file format in $DL_RESULT"
-            ;;
+                echo -e "[ERROR]: Unknown file format in $DL_RESULT, not extracted"
+                ;;
         esac
     else
-        echo "File not written to disk: $DL_RESULT"
+        echo -e "[ERROR]: File not written to disk: $DL_RESULT"
     fi
+}
+
+downloadBundle () {
+    echo -e "\n---\nFile will be downloaded to $LRDIR/$version (Indexes will be auto-rejected)"
+    if [[ $version == 'Quarterly Release' ]]; then
+        wget -r -np -nd -nH -q --show-progress -A liferay-dxp-tomcat-$update-*.tar.gz https://releases-cdn.liferay.com/dxp/$update/ -P $LRDIR/"$version"
+    else
+        wget -r -np -nd -nH -q --show-progress -A liferay-dxp-tomcat-$version.u$update-*.tar.gz,liferay-dxp-tomcat-$version.u$update-*.zip https://releases-cdn.liferay.com/dxp/$version-u$update/ -P $LRDIR/"$version"
+    fi
+    extractBundle
 }
 
 createBundle () {
@@ -509,9 +511,16 @@ elif [[ $1 == "start" ]]; then
 
 elif [[ $1 == "clean" ]]; then
     echo "Running cleanup script"
-    sh ./cleanup.sh
+    bash ./cleanup.sh
     echo "Finished running cleanup"
-
+elif [[ $1 == "help" ]]; then
+    echo -e "The following options are available to use for: quickLR [option]"
+    echo -e "\t[option]: (Description)"
+    echo -e "\t---------------------------------------------------"
+    echo -e "\tstart: start existing Liferay bundles in Projects dir"
+    echo -e "\tclean: run cleanup script to delete Liferay bundles and MySQL dbs" 
+    echo -e "\tconfig: change MySQL version or choose double setup"
+    echo -e "\tserverxml: change ports from 8xxx to 9xxx in server.xml"
 elif [[ $# -eq 0 ]]; then
     # if no positional parameter or any other arg given
     echo -e "Ctrl-C and Run 'quickLR config' to change config settings"
