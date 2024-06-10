@@ -7,7 +7,7 @@
 # Date format to append for duplicate LR installs
 DATE=$(date +%y%m%d%H%M)
 # Turn on/off verbose logging (optional, comment out if you want it off by default)
-debug_logging=false
+debug_logging=true
 # debug_logging=true
 
 # [CHECK] GLOBAL VARIABLES (set in bashrc)
@@ -161,11 +161,11 @@ startLR () {
         break
     done
 
-    google-chrome --incognito http://localhost:8080
     echo -e "\n---\n"
     # START BUNDLE OR EXIT SCRIPT
     read -rsn1 -p"Press any key to start $selected_bundle bundle... or Ctrl-C to exit";echo
     cd "${selected_bundle}"/tomcat*/bin/ && ./catalina.sh run
+    google-chrome --incognito http://localhost:8080
 }
 
 updatePatchingTool () {
@@ -273,8 +273,9 @@ curlCheck () {
 extractBundle () {
     # First search for the archive file (whether zip or tar.gz) to extract
     echo "Searching for archive file to extract..."
-    if [[ $update == 'nightly' ]]; then
+    if [[ $update == 'master' ]]; then
         # This may need to be updated -- double check latest nightly syntax
+        # https://releases.liferay.com/portal/snapshot-master-private/latest/liferay-portal-tomcat-master-private-all.tar.gz
         DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-7.4.13."$update"-*.* | sort -r | head -2)
     elif [[ $version == 'Quarterly Release' ]]; then
         DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$update"-*.* | sort -r | head -2)
@@ -282,7 +283,7 @@ extractBundle () {
         log_echo "[DEBUG]: Searching in $LRDIR/$version... Looking for liferay-dxp-tomcat-$version.u""$update""-*.*"
         # xdg-open $LRDIR/$version
         # DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-$version.u"$update"-*.*)
-        DL_FIND=(`find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$version".u"$update"-*.*`)
+        DL_FIND=(`find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$version"*u"$update"-*.*`)
     fi
     
     # For debugging purposes: Display the found file
@@ -342,7 +343,7 @@ downloadBundle () {
     if [[ $version == 'Quarterly Release' ]]; then
         wget -r -np -nd -nH -q --show-progress -A liferay-dxp-tomcat-"$update"-*.tar.gz https://releases-cdn.liferay.com/dxp/"$update"/ -P "$LRDIR"/"$version"
     else
-        wget -r -np -nd -nH -q --show-progress -A liferay-dxp-tomcat-"$version".u"$update"-*.tar.gz,liferay-dxp-tomcat-"$version".u"$update"-*.zip https://releases-cdn.liferay.com/dxp/"$version"-u"$update"/ -P "$LRDIR"/"$version"
+        wget -r -np -nd -nH -q --show-progress -A liferay-dxp-tomcat-"$version"*u"$update"-*.tar.gz,liferay-dxp-tomcat-"$version"*u"$update"-*.zip https://releases-cdn.liferay.com/dxp/"$version"-u"$update"/ -P "$LRDIR"/"$version"
     fi
 }
 
