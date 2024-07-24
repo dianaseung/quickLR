@@ -7,8 +7,11 @@
 # Date format to append for duplicate LR installs
 DATE=$(date +%y%m%d%H%M)
 # Turn on/off verbose logging (optional, comment out if you want it off by default)
-debug_logging=true
+debug_logging=false
 # debug_logging=true
+
+master_file='liferay-portal-tomcat-master-private-all.tar.gz'
+nightly_file='liferay-dxp-tomcat-7.4.13.nightly.tar.gz'
 
 # [CHECK] GLOBAL VARIABLES (set in bashrc)
 if [ -z ${LRDIR+x} ]; then
@@ -54,11 +57,11 @@ echo -e "---"
 
 log_echo() {
   if [[ $debug_logging == true ]]; then
-    echo "$@"  # Use "$@" to capture all arguments
+    echo -e "[DEBUG] $@"  # Use "$@" to capture all arguments
   fi
 }
 
-checkDir () {
+checkDestinationDir () {
     # CHECK IF BUNDLE EXISTS ALREADY - append date if so
     if [ -d "${PROJECTDIR}"/"${project}"/"${BUNDLED}" ]; then
         BUNDLED="${BUNDLED}.${DATE}"
@@ -210,7 +213,7 @@ createDB () {
         CHECKDB=$(mysql --socket=/tmp/mysql_sandbox"$dbPort".sock --port "$dbPort" -e 'SHOW DATABASES;' | grep "${SCHEMA}")
     fi
     # echo -e "mysql -u${MYSQLUSER} -e "CREATE SCHEMA ${SCHEMA};"
-    log_echo "[CHECK] Checking if ${CHECKDB} exists on $dbPort"
+    log_echo "$LINENO Checking if ${CHECKDB} exists on $dbPort"
     # TODO: fix case sensitivity
     if [[ $CHECKDB == "$SCHEMA" ]]; then
         echo -e "[SUCCESS] Created database ${SCHEMA}"
@@ -259,161 +262,237 @@ patchInstall () {
     fi
 }
 
+checkSRCdir () {
+    echo -e "[checkSRCdir] - Checking if Source DXP directory exists."
+    log_echo "$LINENO Parameter passed: 1 is $1"
+    if [[ $1 == 'QR' ]]; then
+        # For QR?
+        SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$update"* | sort -r | head -2)
+    elif [[ $1 == 'Update' ]]; then
+        # For Update releases
+        SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version".u"$update"* | sort -r | head -2)
+    elif [[ $1 == 'SP' ]]; then
+        # liferay-dxp-tomcat-$version-sp$update
+        SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version".$update-sp"$update"* | sort -r | head -2)
+    else
+        # liferay-dxp-tomcat-$version-sp$update
+        SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version"-ga1* | sort -r | head -2)
+    fi
+
+    for key in "${!SRCDIR_FINDS[@]}"
+        do
+        log_echo "All Results of SRC dir find: Key '$key'  => Value '${SRCDIR_FINDS[$key]}'"
+        done
+    SRCRAW=${SRCDIR_FINDS[0]}
+    # log_echo "$LINENO Selecting first result of SRC dir find => $SRCRAW"
+    SRC_PROCESSED=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+    if [[ $1 == 'QR' ]]; then
+        SRC=$SRC_PROCESSED/liferay-dxp/
+    elif [[ $1 == 'Update' ]]; then
+        SRC=$SRC_PROCESSED/liferay-dxp-$version.u$update/
+    elif [[ $1 == 'SP' ]]; then
+        SRC=$SRC_PROCESSED/liferay-dxp-$version.$update-sp$update/
+    else
+        SRC=$SRC_PROCESSED/liferay-dxp-$version-ga1/
+    fi
+    log_echo "$LINENO Final SRC location => $SRC"
+}
+
+checkArchive () {
+    echo -e "[checkArchive] - Checking if .zip or .tar.gz archive file exists."
+    log_echo "$LINENO Parameters passed: 1 is $1 ; BUNDLED = $BUNDLED"
+    # First search for the archive file (whether zip or tar.gz) to extract
+    if [[ $update == 'master' ]]; then
+        log_echo "$LINENO Looking in $LRDIR/Branch"
+        archive_find=$(find "${LRDIR}"/Branch -maxdepth 1 -name $master_file | sort -r | head -2)
+    elif [[ $1 == 'QR' ]]; then
+        log_echo "$LINENO Looking in $LRDIR/$version for $1"
+        archive_find=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$update"-*.* | sort -r | head -2)
+    elif [[ $1 == 'Update' ]]; then
+        log_echo "$LINENO Looking in $LRDIR/$version for $1"
+        archive_find=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$version"*u"$update"-*.* | sort -r | head -2)
+    elif [[ $1 == 'SP' ]]; then
+        log_echo "$LINENO Looking in $LRDIR/$version for $1"
+        archive_find=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-$version.$update-sp"$update"*.* | sort -r | head -2)
+    else
+        log_echo "$LINENO Looking in $LRDIR/$version for $1"
+        archive_find=(`find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$version"-ga1*.*`)
+    fi
+
+    
+    # For debugging purposes: Display the found file
+    for key in "${!archive_find[@]}"
+        do
+        log_echo "$LINENO Archive Find Result: Key $key => Value ${archive_find[$key]}"
+        done
+
+    # Select the first result; ideally there should only be one result
+    archive_file=${archive_find[0]}
+    log_echo "$LINENO archive_file: $archive_file"
+    archive_final=$(echo "$archive_file" | sed -e "s!/home/dia/Downloads/Liferay/DXP/$version/!!g")
+    log_echo "$LINENO 345 archive_final: $archive_final"
+}
+
+downloadArchive () {
+    log_echo "$LINENO Parameter passed: 1 is $1"
+    if [[ -f $archive_find ]]; then
+        echo "[Archive found] zip or tar.gz file found, skip download. Next step: extract file"
+    else
+        echo "[Archive not found] Attempting download from releases-cdn.liferay.com..."
+        curlCheck $1
+        checkArchive $1
+    fi
+}
+
 curlCheck () {
+    echo -e "[curlCheck] - Check if Liferay is up first"
     status="$(curl -Is https://releases-cdn.liferay.com/ | head -1)"
     validate=( $status )
     if [ "${validate[-2]}" == "200" ]; then
         echo "OK"
-        downloadBundle
+        downloadBundle $1
     else
-        echo "NOT RESPONDING -- Please authenticate or place a local copy of the bundle"
+        echo "NOT RESPONDING -- Liferay may be down."
     fi
 }
 
 extractBundle () {
-    # First search for the archive file (whether zip or tar.gz) to extract
-    echo "Searching for archive file to extract..."
-    if [[ $update == 'master' ]]; then
-        # This may need to be updated -- double check latest nightly syntax
-        # https://releases.liferay.com/portal/snapshot-master-private/latest/liferay-portal-tomcat-master-private-all.tar.gz
-        DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-7.4.13."$update"-*.* | sort -r | head -2)
-    elif [[ $version == 'Quarterly Release' ]]; then
-        DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$update"-*.* | sort -r | head -2)
-    else
-        log_echo "[DEBUG]: Searching in $LRDIR/$version... Looking for liferay-dxp-tomcat-$version.u""$update""-*.*"
-        # xdg-open $LRDIR/$version
-        # DL_FIND=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-$version.u"$update"-*.*)
-        DL_FIND=(`find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$version"*u"$update"-*.*`)
-    fi
-    
-    # For debugging purposes: Display the found file
-    # If multiple results found, show findings
-    # echo "292 - number of items in array DL_FIND: ${#DL_FIND[@]}"
-    # if [[ ${#DL_FIND[@]} -gt 1 ]]; then
-    #     for key in "${!DL_FIND[@]}"
-    #         do
-    #         log_echo "[DEBUG] Result $key) ${DL_FIND[$key]}"
-    #         done
-    # fi
-    # Select the first result; ideally there should only be one result
-    DL_GRAB=${DL_FIND[0]}
-    log_echo "[DEBUG] 285: DL_GRAB: $DL_GRAB"
-    DL_RESULT=$(echo "$DL_GRAB" | sed -e "s!/home/dia/Downloads/Liferay/DXP/$version/!!g")
-    log_echo "[DEBUG]: 287 DL_RESULT: $DL_RESULT"
-
+    # needs a checkArchive first
+    echo -e "[extractBundle] - Unzipping the .tar.gz or .zip archive file."
     # Extract the file depending if it's .tar.gz or .zip (all other formats invalidated)
-    if [[ -f "$LRDIR/$version/$DL_RESULT" ]]; then
-        case "$DL_RESULT" in
+    if [[ -f "$LRDIR/$version/$archive_final" ]]; then
+        case "$archive_final" in
             *.tar.gz)
-                log_echo  "[DEBUG] 307: LR $version $update file finished downloading in $LRDIR/$version/$DL_RESULT"
+                log_echo  "307: LR $version $update file finished downloading in $LRDIR/$version/$archive_final"
                 mkdir "${LRDIR}"/"$version"/"$BUNDLED"
-                log_echo "[DEBUG]: Extracting to $LRDIR/$version/$BUNDLED..."
+                log_echo "$LINENO Extracting to $LRDIR/$version/$BUNDLED..."
                 if [[ -e "${LRDIR}/$version/$BUNDLED" ]]; then
-                    tar xf "$LRDIR"/"$version"/"$DL_RESULT" -C "${LRDIR}"/"$version"/"$BUNDLED"
-                    log_echo "[DEBUG]: File $LRDIR/$version/$DL_RESULT was extracted to $LRDIR/$version/$BUNDLED"
+                    tar xf "$LRDIR"/"$version"/"$archive_final" -C "${LRDIR}"/"$version"/"$BUNDLED"
+                    log_echo "$LINENO File $LRDIR/$version/$archive_final was extracted to $LRDIR/$version/$BUNDLED"
                 else
                     echo -e "[ERROR]: Not properly extracted, manually extract"
                 fi
-                # rm "$LRDIR/$version/$DL_RESULT"
+                # rm "$LRDIR/$version/$archive_final"
                 ;;
             *.zip)
-                echo "LR $version $update file finished downloading in $LRDIR/$version/$DL_RESULT"
+                echo "LR $version $update file finished downloading in $LRDIR/$version/$archive_final"
                 mkdir "${LRDIR}"/"$version"/"$BUNDLED"
                 if [[ -e "${LRDIR}/$version/$BUNDLED" ]]; then
                     # unzip filename.zip -d /path/to/directory
-                    unzip -q "$LRDIR"/"$version"/"$DL_RESULT" -d "${LRDIR}"/"$version"/"$BUNDLED"
-                    log_echo "[DEBUG]: File $LRDIR/$version/$DL_RESULT was extracted to $LRDIR/$version/$BUNDLED"
+                    unzip -q "$LRDIR"/"$version"/"$archive_final" -d "${LRDIR}"/"$version"/"$BUNDLED"
+                    log_echo "$LINENO File $LRDIR/$version/$archive_final was extracted to $LRDIR/$version/$BUNDLED"
 
                 else
                     echo -e "[ERROR]: Not properly extracted, manually extract"
                 fi
-                # rm "$LRDIR/$version/$DL_RESULT"
+                # rm "$LRDIR/$version/$archive_final"
                 ;;
             *)
-                echo -e "[ERROR]: Unknown file format in $DL_RESULT, not extracted"
+                echo -e "[ERROR]: Unknown file format in $archive_final, not extracted"
                 ;;
         esac
     else
-        echo -e "[ERROR]: File not written to disk: $DL_RESULT"
+        echo -e "[ERROR]: File not written to disk: $archive_final"
     fi
+if [ -d "${LRDIR}"/"$version"/"$BUNDLED" ]; then
+    echo "[Extract Successful] Unzip completed. Next step: Copying from $SRC"
+else
+    echo "[Extract Fail] Something went wrong."
+fi
 }
 
 downloadBundle () {
-    echo -e "\n---\nFile will be downloaded to $LRDIR/$version (Indexes will be auto-rejected)"
-    if [[ $version == 'Quarterly Release' ]]; then
-        wget -r -np -nd -nH -q --show-progress -A liferay-dxp-tomcat-"$update"-*.tar.gz https://releases-cdn.liferay.com/dxp/"$update"/ -P "$LRDIR"/"$version"
+    echo -e "[downloadBundle] - Download file from Liferay"
+    if [[ $update == 'master' ]]; then
+        log_echo -e "$LINENO Master file is $master_file"
+        file_format=$master_file
+        master_download_url=https://releases.liferay.com/portal/snapshot-master-private/latest/
+        url=$master_download_url
+        dl_tar_dir=$LRDIR/Branch
+
+        log_echo "file_format = $file_format ; url = $url ; dl_tar_dir = $dl_tar_dir"
+    elif [[ $1 == 'QR' ]]; then
+        file_format="liferay-dxp-tomcat-$update-*.tar.gz"
+        qr_download_url=https://releases-cdn.liferay.com/dxp/$update/
+        url=$qr_download_url
+        dl_tar_dir=$LRDIR/$version
+
+        log_echo "file_format = $file_format ; url = $url ; dl_tar_dir = $dl_tar_dir"
+    elif [[ $1 == 'Update' ]]; then
+        file_format=liferay-dxp-tomcat-$version*u$update-*.tar.gz
+        update_download_url=https://releases-cdn.liferay.com/dxp/$version-u$update/
+        url="$update_download_url"
+        dl_tar_dir="$LRDIR/$version"
+
+        # Check first if .tar.gz file exists
+        log_echo "checking spider if file exists on releases - $url/$file_format"
+        wget -S --spider -A $file_format $url &> /dev/null
+
+        if [[ $? -eq 0 ]]; then
+            log_echo "Continuing to download .tar.gz $file_format..."
+        else
+            file_format=liferay-dxp-tomcat-$version*u$update-*.zip
+            log_echo ".tar.gz file doesn't exist, Downloading $file_format instead."
+        fi
     else
-        wget -r -np -nd -nH -q --show-progress -A liferay-dxp-tomcat-"$version"*u"$update"-*.tar.gz,liferay-dxp-tomcat-"$version"*u"$update"-*.zip https://releases-cdn.liferay.com/dxp/"$version"-u"$update"/ -P "$LRDIR"/"$version"
+        echo "DXP releases under 7.3 not supported yet"
     fi
+    echo -e "\n---\n$1 File WGET downloading to $dl_tar_dir (Indexes auto-rejected)"
+    wget -r -np -nd -nH -q --show-progress -A $file_format $url -P $dl_tar_dir
 }
 
 createBundle () {
-    checkDir "$1"
-    if [[ $update == 'nightly' ]]; then
-        echo "[CHECK] Downloading today's nightly from releases-cdn.liferay.com..."
-        curlCheck
+    echo -e "[createBundle] - Start creating Project bundle"
+    checkDestinationDir "$1"
+    if [[ $update == 'master' ]]; then
+        echo "[CHECK] check if master exists; if not, download today's master..."
+        checkSRCdir $1
+        checkArchive $1
+        downloadArchive $1
         extractBundle
-        NIGHTLY_FIND=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name *"$update"* | sort -r | head -2)
-        NIGHTLY_GRAB=${NIGHTLY_FIND[0]}
-        log_echo "NIGHTLY_GRAB: $NIGHTLY_GRAB"
-        NIGHTLY_RAW=$(echo "$NIGHTLY_GRAB" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-        NIGHTLY_RESULT=$NIGHTLY_RAW/liferay-dxp/
-        cp -r "${LRDIR}"/"$NIGHTLY_RESULT"/ "${PROJECTDIR}"/"$project"/"$BUNDLED"
+        MASTER_FIND=$(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *"$update"* | sort -r | head -2)
+        for key in "${!MASTER_FIND[@]}"
+            do
+            log_echo "$LINENO Result $key) ${MASTER_FIND[$key]}"
+            done
+        MASTER_GRAB=${MASTER_FIND[0]}
+        log_echo "$LINENO First result of master find: $MASTER_GRAB"
+        MASTER_RAW=$(echo "$MASTER_GRAB" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+        MASTER_RESULT=$MASTER_RAW/liferay-dxp/
+        cp -r "${LRDIR}"/"$MASTER_RESULT"/ "${PROJECTDIR}"/"$project"/"$BUNDLED"
     else
+        checkSRCdir $1
         if [ -d "${LRDIR}"/"$SRC" ]; then
-            echo "[CHECK] SRC Directory exists."
-            log_echo "[DEBUG]: copying from $LRDIR/$SRC"
+            echo "[SRC Directory found] Copying from $SRC"
+            log_echo "$LINENO copying from $LRDIR/$SRC"
             cp -r "${LRDIR}"/"$SRC" "${PROJECTDIR}"/"$project"/"$BUNDLED"
         else
-            echo "[CHECK] SRC Directory doesn't exist. Checking if zip or tar.gz file exists in $LRDIR..."
-            log_echo "[DEBUG]: Check BUNDLED (after SRC check) = $BUNDLED"
-            # liferay-dxp-tomcat-7.3.10.u35-20231114110531823.tar.gz
-            # BUNDLED is 
-            # liferay-dxp-tomcat-7.3.10.u35-*.*
-            log_echo "[DEBUG]: Looking in $LRDIR/$version"
-            # xdg-open $LRDIR/$version
-            ARCHIVESEARCH=$(find "$LRDIR"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$version".u"$update"-*.* 2> /dev/null)
-            log_echo "[DEBUG] 364: ARCHIVESEARCH = $ARCHIVESEARCH"
-            for key in "${!ARCHIVESEARCH[@]}"
-                do
-                log_echo "[DEBUG]367: Result $key) ${ARCHIVESEARCH[$key]}"
-                done
-            if [[ -f $ARCHIVESEARCH ]]; then
-                echo "[CHECK]: zip or tar.gz file already downloaded, just need to extract"
-            else
-                echo "[CHECK]: No download found. Attempting download from releases-cdn.liferay.com..."
-                curlCheck
-            fi
+            echo "[SRC Directory not found] Checking if archive file (zip or tar.gz) exists in $version"
+            checkArchive $1
+            downloadArchive $1
             extractBundle
-            if [[ $1 == 'QR' ]]; then
-                log_echo "[DEBUG]: copying from $LRDIR/$version/$BUNDLED/liferay-dxp"
-                cp -r "${LRDIR}"/"$version"/"$BUNDLED"/liferay-dxp/ "${PROJECTDIR}"/"$project"/"$BUNDLED"
+            checkSRCdir $1
+            if [ -d "${LRDIR}"/"$SRC" ]; then
+                echo "[SRC Directory found] Copying to Project bundle"
+                if [[ $1 == 'QR' ]]; then
+                    cp -r "${LRDIR}"/"$version"/"$BUNDLED"/liferay-dxp/ "${PROJECTDIR}"/"$project"/"$BUNDLED"
+                else
+                    cp -r "${LRDIR}"/"$SRC"/ "${PROJECTDIR}"/"$project"/"$BUNDLED"
+                fi
             else
-                log_echo -e "[DEBUG]: Looking in dir $LRDIR/$version for the file liferay-dxp-tomcat-$version.u$update"
-                SRCTEST=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version".u"$update"* | sort -r | head -2)
-                # For debugging purposes: Display the found file
-                for key in "${!SRCTEST[@]}"
-                    do
-                    log_echo -e "[DEBUG] 377: Key is '$key'  => Value is '${SRCTEST[$key]}'"
-                    done
-                SRCRAW=${SRCTEST[0]}
-                log_echo "[DEBUG] 380 SRCRAW $SRCRAW"
-                PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                # liferay-dxp-7.4.13.u72
-                SRC=$PRESRC/liferay-dxp-$version.u$update/
-                cp -r "${LRDIR}"/"$SRC"/ "${PROJECTDIR}"/"$project"/"$BUNDLED"
+                echo "[SRC Directory not found] Something went wrong."
             fi
         fi
     fi
-    # CREATE FOLDER
+    # place portal-ext, install license ... if dest dir exists
     if [ -d "${PROJECTDIR}/$project/$BUNDLED/" ]; then
-        echo -e "[SUCCESS] DXP $version $1 $update folder created at $project/$BUNDLED"
+        echo -e "\n---\n[SUCCESS] DXP $version $1 $update folder created at $project/$BUNDLED"
         # Install Portal-Ext - Always Needed
         cp "${LRDIR}"/portal-ext.properties "${PROJECTDIR}"/"$project"/"$BUNDLED"/
         if [[ -e ${PROJECTDIR}/$project/$BUNDLED/portal-ext.properties ]]; then
-            echo -e "[SUCCESS] Portal-ext placed"
+            echo -e "[SUCCESS] Portal-ext file placed in new bundle"
         else
-            echo -e "[ERROR] Please manually place portal-ext files"
+            echo -e "[ERROR] Please manually place portal-ext file"
             xdg-open "${PROJECTDIR}"/"$project"/"$BUNDLED"/
         fi
         # Install License - Only if !branch / + Update Patching Tool, Create DB, Update Portal-Ext
@@ -424,7 +503,7 @@ createBundle () {
         elif [[ $1 == 'FP' ]]; then
             cp "${LRDIR}"/License/"$version".xml "${PROJECTDIR}"/"$project"/"$BUNDLED"/deploy/
             if [[ -e ${PROJECTDIR}/$project/$BUNDLED/deploy/$version.xml ]]; then
-                echo -e "[SUCCESS] License placed"
+                echo -e "[SUCCESS] License XML placed in deploy folder"
             else
                 echo -e "[ERROR] Please manually place license files"
                 xdg-open "${PROJECTDIR}"/"$project"/"$BUNDLED"/deploy/
@@ -472,7 +551,7 @@ createBundle () {
             # Start MySQL 5.7 and update port
             # dbdeployer deploy single 5.7
         else
-            echo -e "No additional JDBC connector placed"
+            echo -e "[INFO]: No additional JDBC connector placed"
         fi
         echo -e "[SUCCESS] Completed setup of $project/$BUNDLED\n"
         # START BUNDLE OR EXIT SCRIPT
@@ -481,67 +560,69 @@ createBundle () {
         cd "${PROJECTDIR}"/"$project"/"$BUNDLED"/tomcat*/bin/ && ./catalina.sh run
     else
         echo -e "[ERROR] Folder not created"
-        log_echo -e "[DEBUG] Source ${LRDIR}/${SRC}"
-        log_echo -e "[DEBUG] Destination ${PROJECTDIR}/$project/$BUNDLED"
+        log_echo "$LINENO Source ${LRDIR}/${SRC}"
+        log_echo "$LINENO Destination ${PROJECTDIR}/$project/$BUNDLED"
     fi
 }
 
 changeMysqlVersion () {
-        echo -e "[CHECK] Current MYSQL Port is $dbPort"
-        echo -e "Available DBDeployer versions:"
-        dbdeployer versions
-        # Send list of installed DBDeployer servers to .txt
-        # TODO: check if dbdeployer; if yes, use SANDBOX_HOME / if no, 3306?
-        mysqlserverlist=mysqlserverlist.txt
-        ls "${DBDEPLOYER_HOME}/servers/" > $mysqlserverlist
-        # Check if 3306 in server list, if not add
-        if grep -Fxq "3306" $mysqlserverlist
-            then
-                echo -e "[CHECK] 3306 already in $mysqlserverlist"
-            else
-                echo -e "[CHECK] 3306 not in $mysqlserverlist -- inserting 3306 as option"
-                echo -e "3306" >> $mysqlserverlist
-            fi
-        echo -e "---\n"
-        # Define array of available MySQL servers available to choose from  
-        mysqlarray=($(cat "$mysqlserverlist"))
-
-        echo -e "[SELECT] Choose DBDeployer MySQL server"
-        select mysqlserver in "${mysqlarray[@]}"; do
-            DBDserver_DIR=$DBDEPLOYER_HOME/servers/$mysqlserver/
-            # echo -e "The DBDeployer server dir is $DBDserver_DIR"
-            # UPDATE portal-ext with selected server
-            sed -i "s!localhost:.*/SCHEMA!localhost:$mysqlserver/SCHEMA!g" "${LRDIR}"/portal-ext.properties
-            echo -e "[SUCCESS] master portal-ext.properties updated! localhost:${mysqlserver}"
-            break
-        done
-        MYSQLPORTLN=$(grep 'jdbc.default.url' "${LRDIR}"/portal-ext.properties)
-        propPrefix='jdbc.default.url=jdbc:mysql://localhost:'
-        propSuffix='?characterEncoding=UTF-8&dontTrackOpenResources=true&holdResultsOpenOverStatementClose=true&serverTimezone=GMT&useFastDateParsing=false&useUnicode=true'
-        dbNameA=${MYSQLPORTLN/$propPrefix/}
-        dbNameB=${dbNameA/$propSuffix/}
-        dbPort=${dbNameB%/*}
-        echo -e "[CHECK] Current MYSQL Port is $dbPort\n---\n"
-        # Add logic to check query i.e. show databases and if null, execute start command
-        if [ "$dbPort" == '3306' ]; then
-            # This is on by default if mysql installed
-            echo -e "MySQL update complete"
+    log_echo "\n---\nFn : changeMysqlVersion"
+    echo -e "[CHECK] Current MYSQL Port is $dbPort"
+    echo -e "Available DBDeployer versions:"
+    dbdeployer versions
+    # Send list of installed DBDeployer servers to .txt
+    # TODO: check if dbdeployer; if yes, use SANDBOX_HOME / if no, 3306?
+    mysqlserverlist=mysqlserverlist.txt
+    ls "${DBDEPLOYER_HOME}/servers/" > $mysqlserverlist
+    # Check if 3306 in server list, if not add
+    if grep -Fxq "3306" $mysqlserverlist
+        then
+            echo -e "[CHECK] 3306 already in $mysqlserverlist"
         else
-            # Start the DBDeployer server
-            read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
-            cd "$DBDserver_DIR" && ./start
+            echo -e "[CHECK] 3306 not in $mysqlserverlist -- inserting 3306 as option"
+            echo -e "3306" >> $mysqlserverlist
         fi
-    }
+    echo -e "---\n"
+    # Define array of available MySQL servers available to choose from  
+    mysqlarray=($(cat "$mysqlserverlist"))
 
-    setDLR () {
-        echo -e "[SELECT] Setup two Liferay bundles?"
-        select dlr_choice in "y" "n"; do
-            dlr_status=$DBDEPLOYER_HOME/servers/$mysqlserver/
-            sed -i "s!localhost:.*/SCHEMA!localhost:$mysqlserver/SCHEMA!g" "${LRDIR}"/portal-ext.properties
-            echo -e "[SUCCESS] master portal-ext.properties updated! localhost:${mysqlserver}"
-            break
-        done
-    }
+    echo -e "[SELECT] Choose DBDeployer MySQL server"
+    select mysqlserver in "${mysqlarray[@]}"; do
+        DBDserver_DIR=$DBDEPLOYER_HOME/servers/$mysqlserver/
+        # echo -e "The DBDeployer server dir is $DBDserver_DIR"
+        # UPDATE portal-ext with selected server
+        sed -i "s!localhost:.*/SCHEMA!localhost:$mysqlserver/SCHEMA!g" "${LRDIR}"/portal-ext.properties
+        echo -e "[SUCCESS] master portal-ext.properties updated! localhost:${mysqlserver}"
+        break
+    done
+    MYSQLPORTLN=$(grep 'jdbc.default.url' "${LRDIR}"/portal-ext.properties)
+    propPrefix='jdbc.default.url=jdbc:mysql://localhost:'
+    propSuffix='?characterEncoding=UTF-8&dontTrackOpenResources=true&holdResultsOpenOverStatementClose=true&serverTimezone=GMT&useFastDateParsing=false&useUnicode=true'
+    dbNameA=${MYSQLPORTLN/$propPrefix/}
+    dbNameB=${dbNameA/$propSuffix/}
+    dbPort=${dbNameB%/*}
+    echo -e "[CHECK] Current MYSQL Port is $dbPort\n---\n"
+    # Add logic to check query i.e. show databases and if null, execute start command
+    if [ "$dbPort" == '3306' ]; then
+        # This is on by default if mysql installed
+        echo -e "MySQL update complete"
+    else
+        # Start the DBDeployer server
+        read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
+        cd "$DBDserver_DIR" && ./start
+    fi
+}
+
+setDLR () {
+    log_echo "\n---\nFn : setDLR"
+    echo -e "[SELECT] Setup two Liferay bundles?"
+    select dlr_choice in "y" "n"; do
+        dlr_status=$DBDEPLOYER_HOME/servers/$mysqlserver/
+        sed -i "s!localhost:.*/SCHEMA!localhost:$mysqlserver/SCHEMA!g" "${LRDIR}"/portal-ext.properties
+        echo -e "[SUCCESS] master portal-ext.properties updated! localhost:${mysqlserver}"
+        break
+    done
+}
 
 # --------------------------------------------------------------
 
@@ -577,7 +658,7 @@ elif [[ $1 == "start" ]]; then
     startLR
 
 elif [[ $1 == "clean" ]]; then
-    echo "Running cleanup script"
+    echo -e "Running cleanup script: delete Project folder(s) and associated MySQL DB(s)\n---\n"
     bash ./cleanup.sh
     echo "Finished running cleanup"
 elif [[ $1 == "help" ]]; then
@@ -605,10 +686,73 @@ elif [[ $# -eq 0 ]]; then
 
     # Select DXP version
     echo -e "\n---\n[SELECT] Choose Liferay version to install:"
-    DXP=("Quarterly Release" "7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "6.2" "6.1" "Exit")
+    DXP=("Branch" "Quarterly Release" "7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "6.2" "6.1" "Exit")
     select version in "${DXP[@]}"; do
         versiontrim=${version//.}
         case $version in
+            "Branch")
+                echo -e "[SELECT] Choose Branch"
+                branches=("master" "nightly" "7.3.10")
+                select update in "${branches[@]}"; do
+                    case $update in
+                    "master")
+                        # check for master dir
+                        SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name $master_file | sort -r | head -2))
+                        SRCRAW=${SRCTEST[0]}
+                        log_echo "$LINENO master search result (first only): $SRCRAW"
+                        ## FIX THIS
+                        if [[ -z "$variable_name" ]]; then
+                            echo "No master available."
+                            checkArchive $1
+                            SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                            log_echo "$LINENO SRC location is $SRC"
+                            BUNDLED="liferay-portal-tomcat-master-private-all"
+                            SCHEMA="${project}_master"
+                            createBundle Branch
+                        else
+                            SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                            log_echo "$LINENO SRC location is $SRC"
+                            BUNDLED="liferay-portal-tomcat-master-private-all"
+                            SCHEMA="${project}_master"
+                            createBundle Branch
+                        fi
+                        break
+                        ;;
+                    "nightly")
+                        SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name $nightly_file | sort -r | head -2))
+                        for key in "${!SRCTEST[@]}"
+                            do
+                            echo -e "Key is '$key'  => Value is '${SRCTEST[$key]}'"
+                            done
+                        SRCRAW=${SRCTEST[0]}
+                        SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                        log_echo "$LINENO SRC location is $SRC"
+                        BUNDLED="liferay-dxp-tomcat-7.4.13.nightly"
+                        SCHEMA="${versiontrimx}_${project}_$update"
+                        createBundle Branch
+                        break
+                        ;;
+                    # "7.3.10")
+                    #     log_echo "$LINENO Finding SRC in $LRDIR/$version"
+                    #     SRCTEST=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$update"* | sort -r | head -2)
+                    #     for key in "${!SRCTEST[@]}"
+                    #         do
+                    #         log_echo "Key is '$key'  => Value is '${SRCTEST[$key]}'"
+                    #         done
+                    #     SRCRAW=${SRCTEST[0]}
+                    #     log_echo "SRCRAW: $SRCRAW"
+                    #     PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                    #     SRC=$PRESRC/liferay-dxp/
+                    #     log_echo "SRC location is $SRC"
+                    #     BUNDLED="liferay-dxp-tomcat-$update"
+                    #     SCHEMA="QR_${project}_${updatemysql}"
+                    #     createBundle QR
+                    #     break
+                    #     ;;
+                    esac
+                done
+                break
+                ;;
             "Quarterly Release")
                 if ! [[ $dbPort == '3306' ]]; then
                     changeMysqlVersion
@@ -618,48 +762,26 @@ elif [[ $# -eq 0 ]]; then
                 versiontrimx=${version// }
                 read -p "Select DXP 7.4 $version patch level: " update
                 numcheck='^[0-9]+\.q[0-9]+\.[0-9]+'
-                until [[ $update =~ ($numcheck|nightly) ]]; do
+                until [[ $update =~ ($numcheck|nightly|master) ]]; do
                     echo -e "ERROR: Invalid Input. Valid Inputs: YYYY.q#.# (ie 2023.q3.0)\n"
                     read -p "Select DXP $version patch level (Update): " update
                 done
                 updatemysql=${update//./}
                 echo -e "\n---\n"
-                if [ "$update" == 'master' ]; then
-                    SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *portal-master* | sort -r | head -2))
-                    SRCRAW=${SRCTEST[0]}
-                    SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    log_echo "[DEBUG] SRC location is $SRC"
-                    BUNDLED="liferay-dxp-$version-$update"
-                    SCHEMA="${versiontrimx}_${project}_$update"
-                    createBundle Branch
-                elif [ "$update" == 'nightly' ]; then
-                    SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *nightly* | sort -r | head -2))
-                    for key in "${!SRCTEST[@]}"
-                        do
-                        echo -e "Key is '$key'  => Value is '${SRCTEST[$key]}'"
-                        done
-                    SRCRAW=${SRCTEST[0]}
-                    SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    log_echo "[DEBUG] SRC location is $SRC"
-                    BUNDLED="liferay-dxp-$version-$update"
-                    SCHEMA="${versiontrimx}_${project}_$update"
-                    createBundle Branch
-                else
-                    log_echo "[DEBUG]: Finding SRC in $LRDIR/$version"
-                    SRCTEST=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$update"* | sort -r | head -2)
-                    for key in "${!SRCTEST[@]}"
-                        do
-                        log_echo "Key is '$key'  => Value is '${SRCTEST[$key]}'"
-                        done
-                    SRCRAW=${SRCTEST[0]}
-                    log_echo "SRCRAW: $SRCRAW"
-                    PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    SRC=$PRESRC/liferay-dxp/
-                    log_echo "[DEBUG] SRC location is $SRC"
-                    BUNDLED="liferay-dxp-tomcat-$update"
-                    SCHEMA="QR_${project}_${updatemysql}"
-                    createBundle QR
-                fi
+                # log_echo "$LINENO Finding SRC in $LRDIR/$version"
+                # SRCTEST=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$update"* | sort -r | head -2)
+                # for key in "${!SRCTEST[@]}"
+                #     do
+                #     log_echo "Key is '$key'  => Value is '${SRCTEST[$key]}'"
+                #     done
+                # SRCRAW=${SRCTEST[0]}
+                # log_echo "SRCRAW: $SRCRAW"
+                # PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                # SRC=$PRESRC/liferay-dxp/
+                # log_echo "SRC location is $SRC"
+                BUNDLED="liferay-dxp-tomcat-$update"
+                SCHEMA="QR_${project}_${updatemysql}"
+                createBundle QR
                 break
                 ;;
             "7.4.13")
@@ -680,16 +802,16 @@ elif [[ $# -eq 0 ]]; then
                     SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *portal-master* | sort -r | head -2))
                     SRCRAW=${SRCTEST[0]}
                     SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    log_echo "[DEBUG] SRC location is $SRC"
+                    log_echo "$LINENO SRC location is $SRC"
                     # SRC="Branch/liferay-portal-tomcat-master-all/liferay-portal-master-all"
-                    BUNDLED="liferay-dxp-tomcat-$version-$update"
+                    BUNDLED="liferay-portal-tomcat-$version-$update"
                     SCHEMA="${versiontrimx}_${project}_$update"
                     createBundle Branch
                 elif [ "$update" == 'nightly' ]; then
                     SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *nightly* | sort -r | head -2))
                     SRCRAW=${SRCTEST[0]}
                     SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    echo -e "[DEBUG] SRC location is $SRC"
+                    log_echo "$LINENO SRC location is $SRC"
                     # SRC="Branch/liferay-dxp-tomcat-7.4.13.nightly/liferay-portal-7.4.13.nightly"
                     BUNDLED="liferay-dxp-tomcat-$version-$update"
                     SCHEMA="${versiontrimx}_${project}_$update"
@@ -704,14 +826,13 @@ elif [[ $# -eq 0 ]]; then
                     SCHEMA="${versiontrimx}_${project}_U${update}"
                     createBundle Update
                 else
-                    SRCTEST=($(find "${LRDIR}"/7.4.13 -maxdepth 2 -type d -name liferay-dxp-tomcat-*"$update"* | sort -r | head -2))
-                    echo "srctest: $SRCTEST"
-                    SRCRAW=${SRCTEST[0]}
-                    echo "srcraw: $SRCRAW"
-                    PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
-                    SRC=$PRESRC/liferay-dxp-$version.u$update
-                    echo "DEBUG SRC: $SRC"
-                    # SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
+                    # SRCTEST=($(find "${LRDIR}"/7.4.13 -maxdepth 2 -type d -name liferay-dxp-tomcat-*"$update"* | sort -r | head -2))
+                    # echo "srctest: $SRCTEST"
+                    # SRCRAW=${SRCTEST[0]}
+                    # log_echo "798 srcraw: $SRCRAW"
+                    # PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                    # SRC=$PRESRC/liferay-dxp-$version.u$update
+                    # echo "DEBUG SRC: $SRC"
                     BUNDLED="liferay-dxp-tomcat-$version.u$update"
                     SCHEMA="${versiontrimx}_${project}_U${update}"
                     createBundle Update
