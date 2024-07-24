@@ -165,7 +165,7 @@ startLR () {
     # START BUNDLE OR EXIT SCRIPT
     read -rsn1 -p"Press any key to start $selected_bundle bundle... or Ctrl-C to exit";echo
     cd "${selected_bundle}"/tomcat*/bin/ && ./catalina.sh run
-    google-chrome --incognito http://localhost:8080
+    # google-chrome --incognito http://localhost:8080
 }
 
 updatePatchingTool () {
@@ -457,6 +457,23 @@ createBundle () {
             createDB
             updatePortalExtDB
         fi
+        
+        # if 7.0, Manually place the MySQL JDBC connector since https issue
+        if [ "$version" == '7.0.10' ]; then
+            tomcatdir=$(cd "${PROJECTDIR}"/"$project"/"$BUNDLED" && ls | grep tomcat)
+            echo -e "INFO: tomcatdir is $tomcatdir"
+            cp "${LRDIR}"/mysql.jar "${PROJECTDIR}"/"$project"/"$BUNDLED"/"$tomcatdir"/lib/ext/
+            if [[ -e "${PROJECTDIR}/$project/$BUNDLED/$tomcatdir/lib/ext/mysql.jar" ]]; then
+                echo -e "[SUCCESS] MySQL JDBC connector placed at $tomcatdir/lib/ext/mysql.jar"
+            else
+                echo -e "[ERROR] Please manually place MySQL JDBC connector jar"
+                xdg-open "${PROJECTDIR}"/"$project"/"$BUNDLED"/"$tomcatdir"/lib/ext/
+            fi
+            # Start MySQL 5.7 and update port
+            # dbdeployer deploy single 5.7
+        else
+            echo -e "No additional JDBC connector placed"
+        fi
         echo -e "[SUCCESS] Completed setup of $project/$BUNDLED\n"
         # START BUNDLE OR EXIT SCRIPT
         read -rsn1 -p"Press any key to start $BUNDLED bundle... or Ctrl-C to exit";echo
@@ -505,6 +522,15 @@ changeMysqlVersion () {
         dbNameB=${dbNameA/$propSuffix/}
         dbPort=${dbNameB%/*}
         echo -e "[CHECK] Current MYSQL Port is $dbPort\n---\n"
+        # Add logic to check query i.e. show databases and if null, execute start command
+        if [ "$dbPort" == '3306' ]; then
+            # This is on by default if mysql installed
+            echo -e "MySQL update complete"
+        else
+            # Start the DBDeployer server
+            read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
+            cd "$DBDserver_DIR" && ./start
+        fi
     }
 
     setDLR () {
@@ -772,19 +798,7 @@ elif [[ $# -eq 0 ]]; then
                             BUNDLED="liferay-dxp-$version.$updateType-$update"
                             SCHEMA="${versiontrimx}_${project}_$updateType${update}"
                             createBundle "$updateType"
-                            
-                            # Manually place the MySQL JDBC connector since https issue
-                            tomcatdir=$(cd "${PROJECTDIR}"/"$project"/"$BUNDLED" && ls | grep tomcat)
-                            echo -e "INFO: tomcatdir is $tomcatdir"
-                            cp "${LRDIR}"/mysql.jar "${PROJECTDIR}"/"$project"/"$BUNDLED"/"$tomcatdir"/lib/ext/
-                            if [[ -e "${PROJECTDIR}/$project/$BUNDLED/$tomcatdir/lib/ext/mysql.jar" ]]; then
-                                echo -e "[SUCCESS] MySQL JDBC connector placed at $tomcatdir/lib/ext/mysql.jar"
-                            else
-                                echo -e "[ERROR] Please manually place MySQL JDBC connector jar"
-                                xdg-open "${PROJECTDIR}"/"$project"/"$BUNDLED"/"$tomcatdir"/lib/ext/
-                            fi
-                            # Start MySQL 5.7 and update port
-                            # dbdeployer deploy single 5.7
+    
                         else
                             if [ "$updateType" = 'FP' ]; then
                                 SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
