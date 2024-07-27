@@ -7,7 +7,7 @@
 # Date format to append for duplicate LR installs
 DATE=$(date +%y%m%d%H%M)
 # Turn on/off verbose logging (optional, comment out if you want it off by default)
-debug_logging=false
+debug_logging=true
 # debug_logging=true
 
 master_file='liferay-portal-tomcat-master-private-all.tar.gz'
@@ -182,21 +182,21 @@ updatePatchingTool () {
         # v3.0.37 PATCHING TOOL
         FINDPATCHDIR=($(find "${LRDIR}"/Patching -maxdepth 2 -type d -name patching-tool-4.0.* | sort -n | head -2))
         PATCHDIRRAW=${FINDPATCHDIR[-1]}
-        PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+        PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!$LRDIR!!g")
         cp -rf "${LRDIR}"/"$PATCHDIR"/patching-tool/ "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/
         echo -e "[SUCCESS] Updated the Patching Tool folder to $PATCHDIR"
     elif [[ $version == "7.4.13" ]] || [[ $version == "7.3.10" ]]; then
         # v3.0.37 PATCHING TOOL
         FINDPATCHDIR=($(find "${LRDIR}"/Patching -maxdepth 2 -type d -name patching-tool-3.0.* | sort -n | head -2))
         PATCHDIRRAW=${FINDPATCHDIR[-1]}
-        PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+        PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!$LRDIR!!g")
         cp -rf "${LRDIR}"/"$PATCHDIR"/patching-tool/ "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/
         echo -e "[SUCCESS] Updated the Patching Tool folder to $PATCHDIR"
     else
         # v2.0.16 PATCHING TOOL
         FINDPATCHDIR=($(find "${LRDIR}"/Patching -maxdepth 2 -type d -name patching-tool-2.0.* | sort -n | head -2))
         PATCHDIRRAW=${FINDPATCHDIR[-1]}
-        PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+        PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!$LRDIR!!g")
         cp -r "${LRDIR}"/"$PATCHDIR"/patching-tool/ "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/
         echo -e "[SUCCESS] Updated the Patching Tool folder to $PATCHDIR"
     fi
@@ -285,7 +285,7 @@ checkSRCdir () {
         done
     SRCRAW=${SRCDIR_FINDS[0]}
     # log_echo "$LINENO Selecting first result of SRC dir find => $SRCRAW"
-    SRC_PROCESSED=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+    SRC_PROCESSED=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
     if [[ $1 == 'QR' ]]; then
         SRC=$SRC_PROCESSED/liferay-dxp/
     elif [[ $1 == 'Update' ]]; then
@@ -329,7 +329,7 @@ checkArchive () {
     # Select the first result; ideally there should only be one result
     archive_file=${archive_find[0]}
     log_echo "$LINENO archive_file: $archive_file"
-    archive_final=$(echo "$archive_file" | sed -e "s!/home/dia/Downloads/Liferay/DXP/$version/!!g")
+    archive_final=$(echo "$archive_file" | sed -e "s!$LRDIR/$version/!!g")
     log_echo "$LINENO 345 archive_final: $archive_final"
 }
 
@@ -426,7 +426,7 @@ downloadBundle () {
 
         # Check first if .tar.gz file exists
         log_echo "checking spider if file exists on releases - $url/$file_format"
-        wget -S --spider -A $file_format $url &> /dev/null
+        wget -S --spider -A "$file_format" "$url" &> /dev/null
 
         if [[ $? -eq 0 ]]; then
             log_echo "Continuing to download .tar.gz $file_format..."
@@ -438,7 +438,7 @@ downloadBundle () {
         echo "DXP releases under 7.3 not supported yet"
     fi
     echo -e "\n---\n$1 File WGET downloading to $dl_tar_dir (Indexes auto-rejected)"
-    wget -r -np -nd -nH -q --show-progress -A $file_format $url -P $dl_tar_dir
+    wget -r -np -nd -nH -q --show-progress -A "$file_format" "$url" -P "$dl_tar_dir"
 }
 
 createBundle () {
@@ -457,7 +457,7 @@ createBundle () {
             done
         MASTER_GRAB=${MASTER_FIND[0]}
         log_echo "$LINENO First result of master find: $MASTER_GRAB"
-        MASTER_RAW=$(echo "$MASTER_GRAB" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+        MASTER_RAW=$(echo "$MASTER_GRAB" | sed -e "s!$LRDIR!!g")
         MASTER_RESULT=$MASTER_RAW/liferay-dxp/
         cp -r "${LRDIR}"/"$MASTER_RESULT"/ "${PROJECTDIR}"/"$project"/"$BUNDLED"
     else
@@ -704,13 +704,13 @@ elif [[ $# -eq 0 ]]; then
                         if [[ -z "$variable_name" ]]; then
                             echo "No master available."
                             checkArchive $1
-                            SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                            SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                             log_echo "$LINENO SRC location is $SRC"
                             BUNDLED="liferay-portal-tomcat-master-private-all"
                             SCHEMA="${project}_master"
                             createBundle Branch
                         else
-                            SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                            SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                             log_echo "$LINENO SRC location is $SRC"
                             BUNDLED="liferay-portal-tomcat-master-private-all"
                             SCHEMA="${project}_master"
@@ -725,7 +725,7 @@ elif [[ $# -eq 0 ]]; then
                             echo -e "Key is '$key'  => Value is '${SRCTEST[$key]}'"
                             done
                         SRCRAW=${SRCTEST[0]}
-                        SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                        SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                         log_echo "$LINENO SRC location is $SRC"
                         BUNDLED="liferay-dxp-tomcat-7.4.13.nightly"
                         SCHEMA="${versiontrimx}_${project}_$update"
@@ -741,7 +741,7 @@ elif [[ $# -eq 0 ]]; then
                     #         done
                     #     SRCRAW=${SRCTEST[0]}
                     #     log_echo "SRCRAW: $SRCRAW"
-                    #     PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                    #     PRESRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                     #     SRC=$PRESRC/liferay-dxp/
                     #     log_echo "SRC location is $SRC"
                     #     BUNDLED="liferay-dxp-tomcat-$update"
@@ -776,7 +776,7 @@ elif [[ $# -eq 0 ]]; then
                 #     done
                 # SRCRAW=${SRCTEST[0]}
                 # log_echo "SRCRAW: $SRCRAW"
-                # PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                # PRESRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                 # SRC=$PRESRC/liferay-dxp/
                 # log_echo "SRC location is $SRC"
                 BUNDLED="liferay-dxp-tomcat-$update"
@@ -801,7 +801,7 @@ elif [[ $# -eq 0 ]]; then
                 if [ "$update" == 'master' ]; then
                     SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *portal-master* | sort -r | head -2))
                     SRCRAW=${SRCTEST[0]}
-                    SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                    SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                     log_echo "$LINENO SRC location is $SRC"
                     # SRC="Branch/liferay-portal-tomcat-master-all/liferay-portal-master-all"
                     BUNDLED="liferay-portal-tomcat-$version-$update"
@@ -810,7 +810,7 @@ elif [[ $# -eq 0 ]]; then
                 elif [ "$update" == 'nightly' ]; then
                     SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *nightly* | sort -r | head -2))
                     SRCRAW=${SRCTEST[0]}
-                    SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                    SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                     log_echo "$LINENO SRC location is $SRC"
                     # SRC="Branch/liferay-dxp-tomcat-7.4.13.nightly/liferay-portal-7.4.13.nightly"
                     BUNDLED="liferay-dxp-tomcat-$version-$update"
@@ -819,7 +819,7 @@ elif [[ $# -eq 0 ]]; then
                 elif [ "$update" == 'q3' ] || [ "$update" == 'q4' ]; then
                     SRCTEST=($(find "${LRDIR}"/7.4.13 -maxdepth 2 -type d -name liferay-dxp-tomcat-*"$update"* | sort -r | head -2))
                     SRCRAW=${SRCTEST[0]}
-                    SRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                    SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                     # SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
                     # liferay-dxp-tomcat-2023.q4.0-1701894289
                     BUNDLED="liferay-dxp-tomcat-2023.$update"
@@ -830,7 +830,7 @@ elif [[ $# -eq 0 ]]; then
                     # echo "srctest: $SRCTEST"
                     # SRCRAW=${SRCTEST[0]}
                     # log_echo "798 srcraw: $SRCRAW"
-                    # PRESRC=$(echo "$SRCRAW" | sed -e "s!/home/dia/Downloads/Liferay/DXP/!!g")
+                    # PRESRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                     # SRC=$PRESRC/liferay-dxp-$version.u$update
                     # echo "DEBUG SRC: $SRC"
                     BUNDLED="liferay-dxp-tomcat-$version.u$update"
