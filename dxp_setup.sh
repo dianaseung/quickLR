@@ -54,18 +54,15 @@ add_to_bashrc() {
 
 init () {
     # Check env
+    default_lrdir="$HOME/Liferay/DXP"
         # [CHECK] GLOBAL VARIABLES (set in bashrc)
         if [ -z ${LRDIR+x} ]; then
             default_lrdir="$HOME/Liferay/DXP"
             read -p 'Liferay Source Directory ('LRDIR'): [where clean source files will be stored]' lrdit_init
-            # until [[ $update =~ ($numcheck|nightly|master) ]]; do
-            #     echo -e "ERROR: Invalid Input. Valid Inputs: YYYY.q#.# (ie 2023.q3.0)\n"
-            #     read -p "Select DXP $version patch level (Update): " update
-            # done
             if [[ -n "$lrdit_init" ]]; then
                 lrdir_init="$default_lrdir"
             else
-                # add_to_bashrc LRDIR "$lrdit_init"
+                add_to_bashrc LRDIR "$lrdit_init"
                 log_echo "lrdir_init is $lrdit_init"
                 exit 1
             fi
@@ -73,13 +70,13 @@ init () {
             echo -e "[CHECK] LRDIR is ${LRDIR}"
         fi
 
+    default_projectdir="$HOME/Liferay/Project"
         if [ -z ${PROJECTDIR+x} ]; then
-            default_projectdir="$HOME/Liferay/Project"
             read -p 'Project Directory ('PROJECTDIR'): [where test bundles will be stored by Project name]' projectdir_init
             if [[ -n "$projectdir_init" ]]; then
                 lrdir_init="$default_projectdir"
             else
-                # add_to_bashrc PROJECTDIR "$projectdir_init"
+                add_to_bashrc PROJECTDIR "$projectdir_init"
                 log_echo "lrdir_init is $lrdit_init"
                 exit 1
             fi
@@ -89,10 +86,11 @@ init () {
     # If no LRDIR, PROJECTDIR, prompt desired path
     # if not selected, by default, create directories in ~/
         # mkdir Liferay/DXP/
-        mkdir $lrdir_init
-        # mkdir Liferay/Project
-        mkdir $projectdir_init
-        # mkdir Quarterly Release, 7.4, 7.3, 7.2, 7.1, 7.0
+    if [ ! -d "$LRDIR" ]; then
+        log_echo "$LINENO making dir $lrdir_init"
+        mkdir "$lrdir_init"
+
+        # mkdir all subdir within Liferay/DXP -- Quarterly Release, 7.4, 7.3, 7.2, 7.1, 7.0, etc
         mkdir "$lrdir_init/Quarterly Release"
         mkdir "$lrdir_init/7.4.13"
         mkdir "$lrdir_init/7.3.10"
@@ -102,8 +100,22 @@ init () {
         mkdir "$lrdir_init/Branch"
         mkdir "$lrdir_init/Patching"
         mkdir "$lrdir_init/License"
-    # Download latest patching-tools
+
+        # Download latest patching-tools
         downloadPatchingTools
+
+        # Future Feature: Find licenses, rename them?
+    else
+        log_echo "$LINENO LRDIR already setup"
+    fi
+
+    if [ ! -d "$PROJECTDIR" ]; then
+        # mkdir Liferay/Project
+        log_echo "$LINENO making dir $projectdir_init"
+        mkdir "$projectdir_init"
+    else
+        log_echo "$LINENO PROJECTDIR already setup, init complete"
+    fi
 }
 
 downloadPatchingTools() {
