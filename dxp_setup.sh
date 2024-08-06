@@ -8,20 +8,19 @@
 DATE=$(date +%y%m%d%H%M)
 # Turn on/off verbose logging (optional, comment out if you want it off by default)
 debug_logging=true
-# debug_logging=true
 
 master_file='liferay-portal-tomcat-master-private-all.tar.gz'
 nightly_file='liferay-dxp-tomcat-7.4.13.nightly.tar.gz'
 
 # [CHECK] GLOBAL VARIABLES (set in bashrc)
 if [ -z ${LRDIR+x} ]; then
-    echo "WARN: Please set LRDIR in ~/.bashrc first!"
+    echo "WARN: Please run 'quickLR -init' or set LRDIR in ~/.bashrc first!"
     exit 1
 else
     echo -e "[CHECK] LRDIR is ${LRDIR}"
 fi
 if [ -z ${PROJECTDIR+x} ]; then
-    echo "WARN: Please set PROJECTDIR in ~/.bashrc first!"
+    echo "WARN: Please run 'quickLR -init' or set PROJECTDIR in ~/.bashrc first!"
     exit 1
 else
     echo -e "[CHECK] PROJECTDIR is ${PROJECTDIR}"
@@ -43,17 +42,124 @@ dbPort=${dbNameB%/*}
 echo -e "[CHECK] Current MYSQL Port is $dbPort"
 echo -e "---"
 
-# Possible Implementation: Allow User to select Patch Type
-# read -p "Select Patch Type: " type
-# numcheck='^[0-9]+$'
-# until [[ $update =~ (update|FP|SP|QR|master|nightly|branch) ]]; do
-#     echo -e "ERROR: Invalid Input. Valid Inputs: Update or master.\n"
-#     read -p "Select DXP $version patch level (Update): " update
-# done
-
 # --------------------------------------------------------------
 
 # FUNCTIONS
+
+add_to_bashrc() {
+  local variable_name="$1"
+  local value="$2"
+  echo "export $variable_name=\"$value\"" >> ~/.bashrc
+}
+
+init () {
+    # Check env
+        # [CHECK] GLOBAL VARIABLES (set in bashrc)
+        if [ -z ${LRDIR+x} ]; then
+            default_lrdir="$HOME/Liferay/DXP"
+            read -p 'Liferay Source Directory ('LRDIR'): [where clean source files will be stored]' lrdit_init
+            # until [[ $update =~ ($numcheck|nightly|master) ]]; do
+            #     echo -e "ERROR: Invalid Input. Valid Inputs: YYYY.q#.# (ie 2023.q3.0)\n"
+            #     read -p "Select DXP $version patch level (Update): " update
+            # done
+            if [[ -n "$lrdit_init" ]]; then
+                lrdir_init="$default_lrdir"
+            else
+                # add_to_bashrc LRDIR "$lrdit_init"
+                log_echo "lrdir_init is $lrdit_init"
+                exit 1
+            fi
+        else
+            echo -e "[CHECK] LRDIR is ${LRDIR}"
+        fi
+
+        if [ -z ${PROJECTDIR+x} ]; then
+            default_projectdir="$HOME/Liferay/Project"
+            read -p 'Project Directory ('PROJECTDIR'): [where test bundles will be stored by Project name]' projectdir_init
+            if [[ -n "$projectdir_init" ]]; then
+                lrdir_init="$default_projectdir"
+            else
+                # add_to_bashrc PROJECTDIR "$projectdir_init"
+                log_echo "lrdir_init is $lrdit_init"
+                exit 1
+            fi
+        else
+            echo -e "[CHECK] PROJECTDIR is ${PROJECTDIR}"
+        fi
+    # If no LRDIR, PROJECTDIR, prompt desired path
+    # if not selected, by default, create directories in ~/
+        # mkdir Liferay/DXP/
+        mkdir $lrdir_init
+        # mkdir Liferay/Project
+        mkdir $projectdir_init
+        # mkdir Quarterly Release, 7.4, 7.3, 7.2, 7.1, 7.0
+        mkdir "$lrdir_init/Quarterly Release"
+        mkdir "$lrdir_init/7.4.13"
+        mkdir "$lrdir_init/7.3.10"
+        mkdir "$lrdir_init/7.2.10"
+        mkdir "$lrdir_init/7.1.10"
+        mkdir "$lrdir_init/7.0.10"
+        mkdir "$lrdir_init/Branch"
+        mkdir "$lrdir_init/Patching"
+        mkdir "$lrdir_init/License"
+    # Download latest patching-tools
+        downloadPatchingTools
+}
+
+downloadPatchingTools() {
+    log_echo "LRDIR/Patching $LRDIR/Patching"
+    # Download latest patching-tools
+    # from https://releases-cdn.liferay.com/tools/patching-tool/
+    latest_4xPT=$(curl -s https://releases-cdn.liferay.com/tools/patching-tool/LATEST-4.0.txt)
+    log_echo "Latest QR Patching Tool version available: [latest_4xPT] $latest_4xPT"
+    
+    # if highest available in $LRDIR/Patching != latest_4xPT, wget
+    if [ ! -d "$LRDIR/Patching/patching-tool-$latest_4xPT" ]; then
+        wget -nH -q --show-progress -P "$LRDIR/Patching" https://releases-cdn.liferay.com/tools/patching-tool/patching-tool-$latest_4xPT.zip
+        unzip -q "$LRDIR"/Patching/patching-tool-"$latest_4xPT".zip -d "${LRDIR}"/Patching/patching-tool-"$latest_4xPT"
+        if [ -d "$LRDIR/Patching/patching-tool-$latest_4xPT" ]; then
+            log_echo "$LINENO Patching Tool $latest_4xPT successfully downloaded and extracted"
+        else
+            log_echo "$LINENO Something went wrong with Patching Tool extract"
+        fi
+    else
+        log_echo "$LINENO Patching Tool $latest_4xPT already available"
+    fi
+
+    latest_3xPT=$(curl -s https://releases-cdn.liferay.com/tools/patching-tool/LATEST-3.0.txt)
+    log_echo "[latest_3xPT] $latest_3xPT"
+
+    # if highest available in $LRDIR/Patching != latest_3xPT, wget
+    if [ ! -d "$LRDIR/Patching/patching-tool-$latest_3xPT" ]; then
+        wget -nH -q --show-progress -P "$LRDIR/Patching" https://releases-cdn.liferay.com/tools/patching-tool/patching-tool-$latest_3xPT.zip
+        unzip -q "$LRDIR"/Patching/patching-tool-"$latest_3xPT".zip -d "${LRDIR}"/Patching/patching-tool-"$latest_3xPT"
+        if [ -d "$LRDIR/Patching/patching-tool-$latest_3xPT" ]; then
+            log_echo "$LINENO Patching Tool $latest_3xPT successfully downloaded and extracted"
+        else
+            log_echo "$LINENO Something went wrong with Patching Tool extract"
+        fi
+    else
+        log_echo "$LINENO Patching Tool $latest_3xPT already available"
+    fi
+
+    latest_2xPT=$(curl -s https://releases-cdn.liferay.com/tools/patching-tool/LATEST-2.0.txt)
+    log_echo "[latest_2xPT] $latest_2xPT"
+
+    # if highest available in $LRDIR/Patching != latest_2xPT, wget
+    if [ ! -d "$LRDIR/Patching/patching-tool-$latest_2xPT" ]; then
+        wget -nH -q --show-progress -P "$LRDIR/Patching" https://releases-cdn.liferay.com/tools/patching-tool/patching-tool-$latest_2xPT.zip
+        unzip -q "$LRDIR"/Patching/patching-tool-"$latest_2xPT".zip -d "${LRDIR}"/Patching/patching-tool-"$latest_2xPT"
+        if [ -d "$LRDIR/Patching/patching-tool-$latest_2xPT" ]; then
+            log_echo "$LINENO Patching Tool $latest_2xPT successfully downloaded and extracted"
+        else
+            log_echo "$LINENO Something went wrong with Patching Tool extract"
+        fi
+    else
+        log_echo "$LINENO Patching Tool $latest_2xPT already available"
+    fi
+
+    log_echo "$LINENO Completed updating downloaded Patching Tools!"
+}
 
 log_echo() {
   if [[ $debug_logging == true ]]; then
@@ -116,7 +222,9 @@ updateServerXML () {
     # Create ES osgi config
     printf 'sidecarHttpPort="AUTO"' > "$selected_bundle"/osgi/configs/com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config
     echo -e "[SUCCESS] Created osgi config: ES auto sidecar port"
+}
 
+applyTunneling () {
     # Append Tunneling properties to portal-ext.properties
     tunnelcheck=$(grep tunnel "$selected_bundle"/portal-ext.properties)
     if [[ $tunnelcheck ]]; then
@@ -127,12 +235,28 @@ updateServerXML () {
         echo -e "tunneling.servlet.shared.secret.hex=true" >> "$selected_bundle"/portal-ext.properties
         echo -e "[SUCCESS] Appended tunnel properties to portal-ext.properties"
     fi 
+}
 
-    google-chrome --incognito http://localhost:9080
-    echo -e "\n---\n"
-    # START BUNDLE OR EXIT SCRIPT
-    read -rsn1 -p"Press any key to start $selected_bundle bundle... or Ctrl-C to exit";echo
-    cd "${selected_bundle}"/tomcat*/bin/ && ./catalina.sh run
+applyClustering () {
+    # Append Clustering properties to portal-ext.properties
+        # cluster.link.enabled=true
+        # dl.store.impl=com.liferay.portal.store.db.DBStore
+        # cluster.link.autodetect.address=localhost:3306
+    # ---
+    # Future Feature: 
+        # Consider prompting master node, slave node
+        # master node = append cluster properties to portal-ext.properties
+        # cp master's portal-ext.properties to slave 
+        # prompt starting master first
+    tunnelcheck=$(grep cluster "$selected_bundle"/portal-ext.properties)
+    if [[ $tunnelcheck ]]; then
+        echo -e "[INFO] Tunnel properties already exist! Tunnel properties will not be appended."
+    else
+        echo -e "\ncluster.link.enabled=true" >> "$selected_bundle"/portal-ext.properties
+        echo -e "dl.store.impl=com.liferay.portal.store.db.DBStore" >> "$selected_bundle"/portal-ext.properties
+        echo -e "cluster.link.autodetect.address=localhost:3306" >> "$selected_bundle"/portal-ext.properties
+        echo -e "[SUCCESS] Appended clustering properties to portal-ext.properties"
+    fi 
 }
 
 startLR () {
@@ -624,44 +748,12 @@ setDLR () {
     done
 }
 
-# --------------------------------------------------------------
-
-
-if [[ $1 == "config" ]]; then
-    echo -e "\nSelect Config to Change:"
-    select config_menu in "MySQL" "2LR"; do
-        case $config_menu in
-            "MySQL")
-                changeMysqlVersion
-                if [ "$mysqlserver" == '3306' ]; then
-                    # This is on by default if mysql installed
-                    echo -e "MySQL update complete"
-                else
-                    # Start the DBDeployer server
-                    read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
-                    cd "$DBDserver_DIR" && ./start
-                fi
-                exit
-                ;; 
-            
-            "2LR")
-                echo "double setup WIP"
-                DLR=true
-
-                exit
-                ;;
-        esac
-    done
-elif [[ $1 == "serverxml" ]]; then
-    updateServerXML
-elif [[ $1 == "start" ]]; then
-    startLR
-
-elif [[ $1 == "clean" ]]; then
-    echo -e "Running cleanup script: delete Project folder(s) and associated MySQL DB(s)\n---\n"
-    bash ./cleanup.sh
-    echo "Finished running cleanup"
-elif [[ $1 == "help" ]]; then
+help() {
+    echo "Usage: $0 [options]"
+    echo "  -h, --help  Display this help message"
+    echo "  -o, --option  Do something with an option"
+    echo "  -c, --clean  Do something with an option"
+    echo "  -p, --patching  Update Patching Tools"
     echo -e "The following options are available to use for: quickLR [option]"
     echo -e "\t[option]: (Description)"
     echo -e "\t---------------------------------------------------"
@@ -669,6 +761,61 @@ elif [[ $1 == "help" ]]; then
     echo -e "\tclean: run cleanup script to delete Liferay bundles and MySQL dbs" 
     echo -e "\tconfig: change MySQL version or choose double setup"
     echo -e "\tserverxml: change ports from 8xxx to 9xxx in server.xml"
+}
+
+# ---
+
+if [[ $1 == "help" ]]; then
+    help
+elif [[ $1 == "init" ]]; then
+    init
+elif [[ $1 == "patching" || $1 == "pt" ]]; then
+    downloadPatchingTools
+elif [[ $1 == "clean" ]]; then
+    echo -e "Running cleanup script: delete Project folder(s) and associated MySQL DB(s)\n---\n"
+    bash ./cleanup.sh
+    echo "Finished running cleanup"
+# elif [[ $1 == "config" ]]; then
+#     echo -e "\nSelect Config to Change:"
+#     select config_menu in "MySQL" "2LR"; do
+#         case $config_menu in
+#             "MySQL")
+#                 changeMysqlVersion
+#                 if [ "$mysqlserver" == '3306' ]; then
+#                     # This is on by default if mysql installed
+#                     echo -e "MySQL update complete"
+#                 else
+#                     # Start the DBDeployer server
+#                     read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
+#                     cd "$DBDserver_DIR" && ./start
+#                 fi
+#                 exit
+#                 ;; 
+#             "2LR")
+#                 echo "double setup WIP"
+#                 DLR=true
+#                 exit
+#                 ;;
+#         esac
+#     done
+elif [[ $1 == "serverxml" ]]; then
+    updateServerXML
+elif [[ $1 == "start" ]]; then
+    startLR
+elif [[ $1 == "mod" ]]; then
+    mod_menu=("clustering" "staging")
+    select mod_apply in "${mod_menu[@]}"; do
+        case $mod_apply in
+        "clustering")
+            updateServerXML
+            applyClustering
+            ;;
+        "staging")
+            updateServerXML
+            applyTunneling
+            ;;
+        esac        
+    done
 elif [[ $# -eq 0 ]]; then
     # if no positional parameter or any other arg given
     echo -e "Ctrl-C and Run 'quickLR config' to change config settings"
