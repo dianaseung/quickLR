@@ -93,16 +93,16 @@ Sample Project directory ($PROJECTDIR)
 
 ### quickLR Installation / Setup
 1. Clone the repo to your machine
-    - Example: Navigate to /home/$USER/Documents/repo/
-    - run `git clone https://github.com/dianaseung/quickLR.git`
+    - Example: Navigate to `/home/$USER/Documents/repo/`
     - Note: Adjust path as desired.
+    - run `git clone https://github.com/dianaseung/quickLR.git`
 2. Add alias to .bashrc for easy usage
-    - `sudo nano ~/.bashrc
-    - Example: `alias quickLR='/home/$USER/Documents/repo/quickLR/dxp_setup.sh'`
+    - run `sudo nano ~/.bashrc`
+    - Example: `alias quickLR='cd /home/$USER/Documents/repo/quickLR/ && ./dxp_setup.sh'`
     - Note: Adjust alias name and path as desired.
 3. Run `quickLR init` to setup file structure noted above.
-    - If you leave paths blank, it will setup in $HOME.
-    - This will download latest patching tools at time of running init.
+    - This will auto-generate empty folders, copy template portal-ext.properties, and download latest patching tools (at time of running init)
+    - If you leave paths blank, it will setup in $HOME by default.
 2. Download Liferay Licenses
     - Download activation xml licenses for DXP 7.0.10, 7.1.10, 7.2.10, 7.3.10 and 7.4.13 from Help Center
     - Place in `Liferay/DXP/License/` directory. 

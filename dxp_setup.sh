@@ -8,7 +8,7 @@
 # Date format to append
 DATE=$(date +%y%m%d%H%M)
 # Turn on/off verbose logging (optional, comment out if you want it off by default)
-debug_logging=true
+debug_logging=false
 
 log_echo() {
   if [[ $debug_logging == true ]]; then
