@@ -28,8 +28,8 @@ Supports nightly, master, and official releases (Quarterly Release, DXP 7.4, DXP
 
 What does this script do?
 1. Creates a Project folder with Project Code (i.e. CHICAGOLC)
-2. Copies DXP bundle to Project
-3. Places copy of activation xml license and portal-ext.properties to DXP bundle
+2. Copies a DXP bundle to Project
+3. Places a copy of activation xml license and portal-ext.properties to DXP bundle
 4. If Fix Pack needed, places Fix Pack in patching folder, auto-installs FP and clears temp folders. (xdg-open if fail) SP and Updates don't need patching.
 4. Creates a MySQL database
 5. Updates portal-ext.properties with newly created MySQL DB
@@ -92,23 +92,34 @@ Sample Project directory ($PROJECTDIR)
 ## SETUP
 
 ### quickLR Installation / Setup
-1. Create Folder Structure
-    - Download [/sample/Liferay.zip](/sample/Liferay.zip) and extract to desired destination to quickly setup a Folder Structure like above.
-2. Setup Liferay Licenses
+1. Clone the repo to your machine
+    - Example: Navigate to /home/$USER/Documents/repo/
+    - run `git clone https://github.com/dianaseung/quickLR.git`
+    - Note: Adjust path as desired.
+2. Add alias to .bashrc for easy usage
+    - `sudo nano ~/.bashrc
+    - Example: `alias quickLR='/home/$USER/Documents/repo/quickLR/dxp_setup.sh'`
+    - Note: Adjust alias name and path as desired.
+3. Run `quickLR init` to setup file structure noted above.
+    - If you leave paths blank, it will setup in $HOME.
+    - This will download latest patching tools at time of running init.
+2. Download Liferay Licenses
     - Download activation xml licenses for DXP 7.0.10, 7.1.10, 7.2.10, 7.3.10 and 7.4.13 from Help Center
     - Place in `Liferay/DXP/License/` directory. 
     - Rename the xml licenses as DXP version names. ![See Liferay Licenses sample](/media/dir-license-sample.png)
-3. Setup portal-ext.properties file
-    - Download [/sample/portal-ext.properties](/sample/portal-ext.properties) and place in `Liferay/DXP/` directory. 
-    - Do **not** edit `DBUSER` and `DBPW` keywords in the template file, it will be replaced with your MySQL credentials set below. 
+3. Review portal-ext.properties template file
+    - A portal-ext.properties template file (to be used when setting up bundles) has been copied to `Liferay/DXP/License/` during init.
+    - Adjust properties as desired. Properties convenient for testing has been included by default.
+    - Do **not** edit `DBUSER` and `DBPW` keywords in the template file, it will be replaced with your MySQL credentials during when running dxp setup. 
     - Do **not** edit the `SCHEMA` keyword, as that will be auto-updated with the quickLR script.
 4. [Setup MySQL](#setup-install-mysql-server)
     - [Setup MySQL credentials in .my.cnf](#setup-edit-mycnf-for-mysql-credentials)
-5. Run `chmod +x dxp_setup.sh` to give current user execute permissions
+5. Run `chmod +x dxp_setup.sh` (within the quickLR dir) to give current user execute permissions
 
 ### Setup: Set Environment Variables
 
 Use `nano ~/.bashrc`to set the following environmental variables:
+(Note: LRDIR and PROJECTDIR is auto-set if you ran `quickLR init`!)
 ```
 # Environment Variables for quickLR usage (github.com/dianaseung/quickLR)
 export LRDIR=[liferay_directory]
@@ -212,10 +223,10 @@ mysql
 
 ## Usage
 ### DXP Setup Usage
-1. Start DXP setup script using `./dxp_setup.sh`
+1. Start DXP setup script using `./dxp_setup.sh` (or use the alias `quickLR`)
 2. Input Project code (such as CHICAGOLCS or BRAVO)
-3. Select Liferay DXP/Portal version (choose from 7.4.13, 7.3.10, 7.2.10, 7.1.10, 7.0.10, 6.2.10, 6.1.10)
-4. Input the Update, SP or Fix Pack patch level as a numeric input. (such as 72, 51, 2). Please note that DXP 7.2 only supports SP installs (no Fix Pack support yet)
+3. Select Liferay DXP/Portal version (choose from Quarterly Release, 7.4.13, 7.3.10, 7.2.10, 7.1.10, 7.0.10, 6.2.10, 6.1.10)
+4. Input the QR, Update, SP or Fix Pack patch level as a numeric input. (such as 2024.q2.3, 72, 51, 2). 
 5. When setup completes, if all steps successful, press any key to start bundle within terminal or press Ctrl-C to exit script.
     - If any adjustments, such as portal-ext.properties changes or hotfix installation, needs to be done, you can make those adjustments now before returning to terminal to start bundle
 
@@ -227,6 +238,7 @@ mysql
 </p>
 
 - Cleanup Script looks at all folders in $PROJECTDIR within 1 depth, and compare their last modified date to expiration date (set by user).
+- The goal is for cleanup to delete both the physical files, as well as the associated MySQL database.  (Please note that this is a WIP.)
 - Manually run script to delete all Project directory and MySQL database older than expiration date, based on last modified date. 
     - If last modified date is older than expiration date, check if the MySQL database listed in the portal-ext.properties still exists. 
         - If database still exists, prompt to delete database.
@@ -236,32 +248,37 @@ mysql
 ### Cleanup Usage
 1. Start cleanup script using
 ```
-./cleanup.sh
+`quickLR clean` (or ./cleanup.sh if alias is not set)
 ```
-2. Input how many days until expiration date (default is 60 days)
-3. If there are any Projects past expiration date, press any key to confirm database deletion.  Then press any key to confirm Project folder deletion. 
+2. Select from: Clean all projects, Clean one project, Clean multiple projects, Clean by Last Modified.
+3. For 'Clean all projects' option, MySQL database deletion is not yet supported.
+4. For 'Clean by Last Modified': Input how many days until expiration date (default is 60 days)
+    - If there are any Projects past expiration date, press any key to confirm database deletion.  Then press any key to confirm Project folder deletion. 
     - Press Ctrl-C at any time to cancel deletion.
-4. Script will print remaining days until expiration date for remaining.
+    - Script will print remaining days until expiration date for remaining.
 5. Script will auto-exit once completed.
 
 
 ---
 
 ## Planned Upcoming Features
-- <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> curl Liferay bundle from releases-cdn.liferay.com and auto-extract -- if fails, check LRDIR for local files
-- <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> Automate quickLR setup via script (create directory structure via script, add quickLR env to bashrc via script)
+- <img src="https://img.shields.io/badge/Priority-High-red" alt="High Priority" /> [License & Target source] Find target source based on find/grep of $versiontrimx
 
-- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> [License & Target source] Find target source based on find/grep of $versiontrimx
+- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> Improve `mod` -- currently modifies a bundle for either staging or clustering. Could use semantic improvement, as well as make more user-friendly.  
+    - During clustering setup, prompt which is master node
 
-- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" /> COMPLETED: Update to latest patching-tool available with any new bundle - P2: grep highest number dir
-- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" />  COMPLETED: Add Config menu (implemented as 'quickLR config' terminal command):
-    - Second bundle setup (update server.xml file ports from 8xxx to 9xxx, cp com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config file to /osgi/configs/) - Note: writing the functionality is easy, but need to figure out logic for how to add to script menu (maybe need to flesh out the config menu)
-    - Copy `com.liferay.portal.search.elasticsearch7.configuration.ElasticsearchConfiguration.config` config file to /$LIFERAY_HOME/osgi/config/for remote elasticsearch setup
+- <img src="https://img.shields.io/badge/Priority-Medium-yellow" alt="Medium Priority" />  Organize options
+
 - <img src="https://img.shields.io/badge/Priority-Low-green" alt="Low Priority" /> (Low Priority) Fix Pack Support for Portal 6.2 and 6.1 (currently SP support only)
 
 ---
 
 ## Update History
+- 8/7/24 - Added `pt` option to download latest patching tools (run `quickLR pt`)
+- 8/7/24 - Modify a bundle for staging or clustering via `mod` (run `quickLR mod`)
+- 8/7/24 - Added `help` option to see available options.
+- 8/6/24 - Automate quickLR setup via script (create directory structure via script, add quickLR env to bashrc via script)
+- 2/6/24 - Download Liferay bundle from releases-cdn.liferay.com and auto-extract.
 - 1/30/24 - Updated for Quarterly Release format (including grabbing the highest number of Patching Tool available in {LRDIR}/Patching dir)
 - Q4 2023 - Changed config menu to be accessible under 'quickLR config' 
 - 5/11/23 - Updated installation instructions based on testing on clean Ubuntu VM install
