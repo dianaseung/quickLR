@@ -166,42 +166,29 @@ sudo mysql
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'liferay';
 exit
 ```
-If you want to allow low security password just for testing purposes, use the following commands before exiting to adjust the password policy:
-```
-SHOW VARIABLES LIKE 'validate_password%';
-SET GLOBAL validate_password.policy=LOW;
-SET GLOBAL validate_password.length=6;
-SET GLOBAL validate_password.mixed_case_count=0;
-SET GLOBAL validate_password.number_count=0;
-SET GLOBAL validate_password.special_char_count=0;
-```
-
-b). Use the password set in a) to run the security script to change password, and follow the prompts. 
-```
-sudo mysql_secure_installation
-```
-After running the security script, use the following to set back to auth_socket connection:
+b) Afterwards, use the following to set back to auth_socket connection:
 ```
 mysql -u root -p
 ALTER USER 'root'@'localhost' IDENTIFIED WITH auth_socket;
+exit
 ```
 c). Open MySQL prompt to create MySQL user (replace 'user' with your own user) and set permissions
 ```
 sudo mysql
 ```
 ```
-CREATE USER 'dia'@'localhost' IDENTIFIED BY 'liferay';
-GRANT ALL PRIVILEGES ON *.* TO 'dia'@'localhost' WITH GRANT OPTION;
+CREATE USER 'user'@'localhost' IDENTIFIED BY 'liferay';
+GRANT ALL PRIVILEGES ON *.* TO 'user'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 exit
 ```
-e). MySQL credentials to .my.cnf to avoid MySQL prompts
-- Open the .my.cnf file
+d). MySQL credentials to my.cnf to avoid MySQL prompts
+- Add your MySQL credentials to either ~/.my.cnf or /etc/mysql/conf.d/mysql.cnf (check /etc/alternatives/my.cnf if neither work)
 ```
-nano ~/.my.cnf
+sudo nano ~/.my.cnf
 ```
 
-- Add user/password to .my.cnf file to allow script to create MySQL database (replace `mysqluser` and `mysqlpw` with credentials set above)
+- Add user/password to .my.cnf file to allow script to create MySQL database (replace `mysqluser` and `mysqlpw` with the credentials set above)
 
 ```
 [mysql]
@@ -214,7 +201,7 @@ chmod 600 ~/.my.cnf
 ```
 See for more configuration detail: https://www.inmotionhosting.com/support/server/databases/edit-mysql-my-cnf/
 
-f). Test if it works using one of the following:
+e). Test if it works using one of the following:
 ```
 mysql
 ```
