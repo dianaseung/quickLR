@@ -141,6 +141,8 @@ init () {
         mkdir "$LRDIRinit/7.2.10"
         mkdir "$LRDIRinit/7.1.10"
         mkdir "$LRDIRinit/7.0.10"
+        mkdir "$LRDIRinit/6.2"
+        mkdir "$LRDIRinit/6.1"
         mkdir "$LRDIRinit/Branch"
         mkdir "$LRDIRinit/Patching"
         mkdir "$LRDIRinit/License"
@@ -400,17 +402,21 @@ patchInstall () {
 
 checkSRCdir () {
     echo -e "[checkSRCdir] - Checking if Source DXP directory exists."
-    log_echo "$LINENO Parameter passed: 1 is $1"
+    log_echo "$LINENO Parameter passed: 1 is $1 / version is $version"
     if [[ $1 == 'QR' ]]; then
         # For QR?
         SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$update"* | sort -r | head -2)
     elif [[ $1 == 'Update' ]]; then
         # For Update releases
         SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version".u"$update"* | sort -r | head -2)
-    elif [[ $1 == 'SP' ]]; then
-        # liferay-dxp-tomcat-$version-sp$update
-        SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version".$update-sp"$update"* | sort -r | head -2)
-    else
+    elif [[ $version == '6.2' ]]; then
+        # "liferay-portal-tomcat-$version-ee-sp$update-*.zip" or use file_format
+        log_echo "$LINENO $version SRCDIR_FIND"
+        SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-portal-tomcat-$version.ee-sp$update* | sort -r | head -2)
+    # elif [[ $1 == 'SP' ]]; then
+    #     # liferay-dxp-tomcat-$version-sp$update
+    #     SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version".$update-sp"$update"* | sort -r | head -2)
+    else    
         # liferay-dxp-tomcat-$version-sp$update
         SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version"-ga1* | sort -r | head -2)
     fi
@@ -420,12 +426,16 @@ checkSRCdir () {
         log_echo "All Results of SRC dir find: Key '$key'  => Value '${SRCDIR_FINDS[$key]}'"
         done
     SRCRAW=${SRCDIR_FINDS[0]}
-    # log_echo "$LINENO Selecting first result of SRC dir find => $SRCRAW"
+    log_echo "$LINENO Selecting first result of SRC dir find => $SRCRAW"
     SRC_PROCESSED=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
+    log_echo "$LINENO SRC_PROCESSED: $SRC_PROCESSED"
     if [[ $1 == 'QR' ]]; then
         SRC=$SRC_PROCESSED/liferay-dxp/
     elif [[ $1 == 'Update' ]]; then
         SRC=$SRC_PROCESSED/liferay-dxp-$version.u$update/
+    elif [[ $version == '6.2' ]]; then
+        # liferay-portal-6.2-ee-sp20
+        SRC=$SRC_PROCESSED/liferay-portal-$version-ee-sp$update/
     elif [[ $1 == 'SP' ]]; then
         SRC=$SRC_PROCESSED/liferay-dxp-$version.$update-sp$update/
     else
@@ -438,20 +448,19 @@ checkArchive () {
     echo -e "[checkArchive] - Checking if .zip or .tar.gz archive file exists."
     log_echo "$LINENO Parameters passed: 1 is $1 ; BUNDLED = $BUNDLED"
     # First search for the archive file (whether zip or tar.gz) to extract
+    log_echo "$LINENO Looking in $LRDIR/$version for $1"
     if [[ $update == 'master' ]]; then
-        log_echo "$LINENO Looking in $LRDIR/Branch"
         archive_find=$(find "${LRDIR}"/Branch -maxdepth 1 -name $master_file | sort -r | head -2)
     elif [[ $1 == 'QR' ]]; then
-        log_echo "$LINENO Looking in $LRDIR/$version for $1"
         archive_find=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$update"-*.* | sort -r | head -2)
     elif [[ $1 == 'Update' ]]; then
-        log_echo "$LINENO Looking in $LRDIR/$version for $1"
         archive_find=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$version"*u"$update"-*.* | sort -r | head -2)
+    elif [[ $version == '6.2' ]]; then 
+        # "liferay-portal-tomcat-$version-ee-sp$update-*.zip" or use file_format
+        archive_find=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-portal-tomcat-$version-ee-sp"$update"*.* | sort -r | head -2)
     elif [[ $1 == 'SP' ]]; then
-        log_echo "$LINENO Looking in $LRDIR/$version for $1"
         archive_find=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-$version.$update-sp"$update"*.* | sort -r | head -2)
     else
-        log_echo "$LINENO Looking in $LRDIR/$version for $1"
         archive_find=(`find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$version"-ga1*.*`)
     fi
 
@@ -466,7 +475,7 @@ checkArchive () {
     archive_file=${archive_find[0]}
     log_echo "$LINENO archive_file: $archive_file"
     archive_final=$(echo "$archive_file" | sed -e "s!$LRDIR/$version/!!g")
-    log_echo "$LINENO 345 archive_final: $archive_final"
+    log_echo "$LINENO archive_final: $archive_final"
 }
 
 downloadArchive () {
@@ -570,6 +579,15 @@ downloadBundle () {
             file_format=liferay-dxp-tomcat-$version*u$update-*.zip
             log_echo ".tar.gz file doesn't exist, Downloading $file_format instead."
         fi
+    elif [[ $version == '6.2' ]]; then
+        # https://releases-cdn.liferay.com/dxp/6.2.10.21/liferay-portal-tomcat-6.2-ee-sp20-20170717160924965.zip
+        file_format="liferay-portal-tomcat-$version-ee-sp$update-*.zip"
+        portal_update=$((update + 1))
+        sp_download_url=https://releases-cdn.liferay.com/dxp/$version.10.$portal_update/
+        url=$sp_download_url
+        dl_tar_dir=$LRDIR/$version
+
+        log_echo "Portal 6.2 file_format = $file_format ; url = $url ; dl_tar_dir = $dl_tar_dir"
     else
         echo "DXP releases under 7.3 not supported yet"
     fi
@@ -1098,6 +1116,16 @@ elif [[ $# -eq 0 ]]; then
                     break
                     ;;
                 "6.2" | "6.1")
+                    if [ "$version" == '6.2' ]; then
+                        echo -e "WARN: Update Config - Portal 6.2 is only compatible with MySQL 5.5."
+                        if [[ ! $dbPort =~ 55[0-9][0-9] ]]; then
+                            changeMysqlVersion
+                        else
+                            echo -e "INFO: dbPort is $dbPort"
+                        fi
+                    else
+                        echo -e "INFO: dbPort is $dbPort"
+                    fi
                     versiontrimx=${versiontrim//10}
                     # CHOOSE A SP
                     read -p "Select Portal $version patch level (SP #): " update
