@@ -8,7 +8,9 @@
 # Date format to append
 DATE=$(date +%y%m%d%H%M)
 # Turn on/off verbose logging (optional, comment out if you want it off by default)
-debug_logging=false
+debug_logging=true
+
+echo "refactor branch"
 
 log_echo() {
   if [[ $debug_logging == true ]]; then
@@ -16,7 +18,7 @@ log_echo() {
   fi
 }
 
-master_file='liferay-portal-tomcat-master-private-all.tar.gz'
+master_file='liferay-portal-tomcat-master-private-all'
 nightly_file='liferay-dxp-tomcat-7.4.13.nightly.tar.gz'
 
 log_echo "LRDIR: $LRDIR"
@@ -39,7 +41,18 @@ fi
 
 # FUNCTIONS
 
-
+lrclean() {
+    echo "Cleaning up Temp/Work..."
+    rm -rf ./osgi/state/*
+    echo "OSGi State Folder Cleared!"
+    wait
+    rm -rf ./tomcat*/temp/*
+    echo "Temp Folder Cleared!"
+    wait
+    rm -rf ./tomcat*/work/*
+    echo "Work Folder Cleared!"
+    echo "Temp/Work Folders Cleared!"
+}
 
 add_to_bashrc() {
   local variable_name="$1"
@@ -273,6 +286,36 @@ applyClustering () {
     fi 
 }
 
+
+hotfixInstall() {
+if [[ -f *.zip ]]; then
+    ./patching-tool.sh info 
+    ./patching-tool.sh install 
+    ./patching-tool.sh info 
+    cd .. 
+    lrclean 
+    startTomcat
+else
+    echo "[ERROR] Something went wrong with hotfix install"
+fi
+}
+startTomcat() {
+    cd tomcat*/bin && ./catalina.sh run
+}
+
+patchBundle() {
+    current_dir="$(basename "$PWD")"
+    if [[ $current_dir =~ "patching-tool" ]]; then
+        patchStart
+    elif [[ $current_dir =~ "patches" ]]; then
+        cd ..
+        patchStart
+    else
+        cd $PROJECTDIR/
+        echo "[ERROR]: Run "
+    fi
+}
+
 startLR () {
     projectlist=projectlist.txt
     ls "${PROJECTDIR}" > $projectlist
@@ -305,7 +348,11 @@ startLR () {
     echo -e "\n---\n"
     # START BUNDLE OR EXIT SCRIPT
     read -rsn1 -p"Press any key to start $selected_bundle bundle... or Ctrl-C to exit";echo
-    cd "${selected_bundle}"/tomcat*/bin/ && ./catalina.sh run
+    cd "${selected_bundle}"
+    cd patching-tool/
+
+    cd "${selected_bundle}"
+    startTomcat
     # google-chrome --incognito http://localhost:8080
 }
 
@@ -314,24 +361,22 @@ updatePatchingTool () {
     # use readlink instead
     rm -rf "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/
     # INSTALL LATEST PATCHING TOOL BASED ON VERSION
-    # Phase 1. hardcode in PT version for now
-    # Phase 2, search for highest available number patching tool folder in directory
     if [[ $version == "Quarterly Release" ]]; then
-        # v3.0.37 PATCHING TOOL
+        # v4.0.x PATCHING TOOL
         FINDPATCHDIR=($(find "${LRDIR}"/Patching -maxdepth 2 -type d -name patching-tool-4.0.* | sort -n | head -2))
         PATCHDIRRAW=${FINDPATCHDIR[-1]}
         PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!$LRDIR!!g")
         cp -rf "${LRDIR}"/"$PATCHDIR"/patching-tool/ "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/
         echo -e "[SUCCESS] Updated the Patching Tool folder to $PATCHDIR"
     elif [[ $version == "7.4.13" ]] || [[ $version == "7.3.10" ]]; then
-        # v3.0.37 PATCHING TOOL
+        # v3.0.x PATCHING TOOL
         FINDPATCHDIR=($(find "${LRDIR}"/Patching -maxdepth 2 -type d -name patching-tool-3.0.* | sort -n | head -2))
         PATCHDIRRAW=${FINDPATCHDIR[-1]}
         PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!$LRDIR!!g")
         cp -rf "${LRDIR}"/"$PATCHDIR"/patching-tool/ "${PROJECTDIR}"/"$project"/"$BUNDLED"/patching-tool/
         echo -e "[SUCCESS] Updated the Patching Tool folder to $PATCHDIR"
     else
-        # v2.0.16 PATCHING TOOL
+        # v2.0.x PATCHING TOOL
         FINDPATCHDIR=($(find "${LRDIR}"/Patching -maxdepth 2 -type d -name patching-tool-2.0.* | sort -n | head -2))
         PATCHDIRRAW=${FINDPATCHDIR[-1]}
         PATCHDIR=$(echo "$PATCHDIRRAW" | sed -e "s!$LRDIR!!g")
@@ -403,7 +448,9 @@ patchInstall () {
 checkSRCdir () {
     echo -e "[checkSRCdir] - Checking if Source DXP directory exists."
     log_echo "$LINENO Parameter passed: 1 is $1 / version is $version"
-    if [[ $1 == 'QR' ]]; then
+    if [[ $version == 'Branch' ]]; then
+        SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name $master_file* | sort -r | head -2)
+    elif [[ $1 == 'QR' ]]; then
         # For QR?
         SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$update"* | sort -r | head -2)
     elif [[ $1 == 'Update' ]]; then
@@ -413,9 +460,9 @@ checkSRCdir () {
         # "liferay-portal-tomcat-$version-ee-sp$update-*.zip" or use file_format
         log_echo "$LINENO $version SRCDIR_FIND"
         SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-portal-tomcat-$version.ee-sp$update* | sort -r | head -2)
-    # elif [[ $1 == 'SP' ]]; then
-    #     # liferay-dxp-tomcat-$version-sp$update
-    #     SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version".$update-sp"$update"* | sort -r | head -2)
+    elif [[ $1 == 'SP' ]]; then
+        # liferay-dxp-tomcat-$version-sp$update
+        SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version".$update-sp"$update"* | sort -r | head -2)
     else    
         # liferay-dxp-tomcat-$version-sp$update
         SRCDIR_FINDS=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$version"-ga1* | sort -r | head -2)
@@ -427,9 +474,14 @@ checkSRCdir () {
         done
     SRCRAW=${SRCDIR_FINDS[0]}
     log_echo "$LINENO Selecting first result of SRC dir find => $SRCRAW"
+    src_basename_test=$(basename -- "$SRCRAW")
+    echo "$LINENO basename SRCRAW $src_basename_test"
     SRC_PROCESSED=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
+    # SRC_PROCESSED=$(basename -- "$SRCRAW")
     log_echo "$LINENO SRC_PROCESSED: $SRC_PROCESSED"
-    if [[ $1 == 'QR' ]]; then
+    if [[ $update == 'master' ]]; then
+        SRC=$SRC_PROCESSED/liferay-portal-master-private-all/
+    elif [[ $1 == 'QR' ]]; then
         SRC=$SRC_PROCESSED/liferay-dxp/
     elif [[ $1 == 'Update' ]]; then
         SRC=$SRC_PROCESSED/liferay-dxp-$version.u$update/
@@ -441,6 +493,13 @@ checkSRCdir () {
     else
         SRC=$SRC_PROCESSED/liferay-dxp-$version-ga1/
     fi
+
+    # if [[ -d "$SRC" ]]; then
+    #     echo "[CHECK] SRC IS VALID"
+    # else
+    #     SRC=$SRC_PROCESSED/liferay-dxp/
+    # fi
+
     log_echo "$LINENO Final SRC location => $SRC"
 }
 
@@ -450,7 +509,7 @@ checkArchive () {
     # First search for the archive file (whether zip or tar.gz) to extract
     log_echo "$LINENO Looking in $LRDIR/$version for $1"
     if [[ $update == 'master' ]]; then
-        archive_find=$(find "${LRDIR}"/Branch -maxdepth 1 -name $master_file | sort -r | head -2)
+        archive_find=$(find "${LRDIR}"/Branch -maxdepth 1 -name $master_file.tar.gz | sort -r | head -2)
     elif [[ $1 == 'QR' ]]; then
         archive_find=$(find "${LRDIR}"/"$version"/ -maxdepth 1 -name liferay-dxp-tomcat-"$update"-*.* | sort -r | head -2)
     elif [[ $1 == 'Update' ]]; then
@@ -501,6 +560,138 @@ curlCheck () {
     fi
 }
 
+# Use this for validating $update later
+# -----------------------------------------------------------------------
+
+# Define empty arrays for versions
+declare -a versions_qr=()
+declare -a versions_74=()
+declare -a versions_73=()
+declare -a versions_72=()
+declare -a versions_71=()
+declare -a versions_70=()
+
+getReleaseTags() {
+    # URL to fetch DXP Release targetPlatformVersion
+    url="https://releases-cdn.liferay.com/releases.json"
+
+    # Capture JSON data using curl (more reliable than wget)
+    json_data=$(curl -sSL "$url")
+
+    # Check for successful retrieval
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to retrieve data from $url"
+        exit 1
+    fi
+
+    # Extract tag names using jq (assuming jq is installed)
+    release_tag_list=()
+    while read -r name; do
+        if [[ -n "$name" && ! " ${release_tag_list[*]} " =~ " $name " ]]; then
+            release_tag_list+=("$name")
+        fi
+    done < <(jq -r '.[] | .targetPlatformVersion' <<< "$json_data")
+}
+
+sortReleaseTags() {
+    for release_tag in "${release_tag_list[@]}"; do
+        if [[ "$release_tag" =~ ^[0-9]+\.q[0-9]+\.[0-9]+ ]]; then
+            versions_qr+=("$release_tag")
+        elif [[ "$release_tag" =~ ^7.4.13 ]]; then
+            versions_74+=("$release_tag")
+        elif [[ "$release_tag" =~ ^7.3.10 ]]; then
+            versions_73+=("$release_tag")
+        elif [[ "$release_tag" =~ ^7.2.10 ]]; then
+            versions_72+=("$release_tag")
+        elif [[ "$release_tag" =~ ^7.1.10 ]]; then
+            versions_71+=("$release_tag")
+        elif [[ "$release_tag" =~ ^7.0.10 ]]; then
+            versions_70+=("$release_tag")
+        fi
+    done
+}
+
+printReleaseTags() {
+    # Print the tags
+    echo "Available Tags:"
+    # for tag in "${release_tag_list[@]}"; do
+    #     echo -e "  - $tag"
+    # done
+    echo "${release_tag_list[@]}"
+
+    # Print the contents of the versions_QR array (optional)
+    echo -e "\n---\nVersions in QR array:"
+    # echo "${versions_qr[@]}"
+    for tag in "${versions_qr[@]}"; do
+        echo -e "  - $tag"
+    done
+
+    # Print the contents of the versions_74 array (optional)
+    echo "Versions in 7.4 array:"
+    echo "${versions_74[@]}"
+
+    # Print the contents of the versions_73 array (optional)
+    echo "Versions in 7.3 array:"
+    echo "${versions_73[@]}"
+
+    # Print the contents of the versions_72 array (optional)
+    echo "Versions in 7.2 array:"
+    echo "${versions_72[@]}"
+
+    # Print the contents of the versions_71 array (optional)
+    echo "Versions in 7.1 array:"
+    echo "${versions_71[@]}"
+
+    # Print the contents of the versions_70 array (optional)
+    echo "Versions in 7.0 array:"
+    echo "${versions_70[@]}"
+
+}
+
+selectReleaseTag() {
+    # Example: Print tags with specific prefix (modify as needed)
+    if [[ $# -gt 0 ]]; then
+    prefix="$1"
+    echo "Tags starting with '$prefix':"
+    for tag in "${release_tag_list[@]}"; do
+        if [[ "$tag" =~ ^"$prefix" ]]; then
+        echo "  - $tag"
+        fi
+    done
+    fi
+}
+
+checkValidDXP() {
+    echo -e "Pulling all current Liferay DXP Release Tags: https://releases-cdn.liferay.com/releases.json"
+    getReleaseTags
+    sortReleaseTags
+    # printReleaseTags
+    read -p "Input Release Tag: " release_tag
+
+    until [[ -n "$release_tag" ]]; do
+        echo "Input cannot be empty."
+        read -p "Input Release Tag: " release_tag
+    done
+
+    while [[ ! " ${release_tag_list[@]} " =~ " $release_tag " ]]; do
+        echo -e "[ERROR] Invalid Release Tag. Did you mean:\n"
+        selectReleaseTag $release_tag
+
+        # Ask user again to input docker tag
+        read -p "Input Release Tag: " release_tag
+        if [[ "$release_tag" == "" ]]; then
+            echo "Input cannot be empty."
+        fi
+    done
+
+    echo -e "\033[31m\nFinal Release Tag Choice:\033[0m $release_tag"
+
+    echo -e "FYI: Other related docker tags:"
+    selectReleaseTag $release_tag
+}
+
+# -----------------------------------------------------------------------------------------------------------------------------------
+
 extractBundle () {
     # needs a checkArchive first
     echo -e "[extractBundle] - Unzipping the .tar.gz or .zip archive file."
@@ -549,53 +740,74 @@ fi
 downloadBundle () {
     echo -e "[downloadBundle] - Download file from Liferay"
     if [[ $update == 'master' ]]; then
-        log_echo -e "$LINENO Master file is $master_file"
+        log_echo -e "$LINENO Master file is $master_file.tar.gz"
         file_format=$master_file
         master_download_url=https://releases.liferay.com/portal/snapshot-master-private/latest/
         url=$master_download_url
         dl_tar_dir=$LRDIR/Branch
-
-        log_echo "file_format = $file_format ; url = $url ; dl_tar_dir = $dl_tar_dir"
     elif [[ $1 == 'QR' ]]; then
-        file_format="liferay-dxp-tomcat-$update-*.tar.gz"
+        file_format="liferay-dxp-tomcat-$update-*"
         qr_download_url=https://releases-cdn.liferay.com/dxp/$update/
         url=$qr_download_url
         dl_tar_dir=$LRDIR/$version
-
-        log_echo "file_format = $file_format ; url = $url ; dl_tar_dir = $dl_tar_dir"
     elif [[ $1 == 'Update' ]]; then
-        file_format=liferay-dxp-tomcat-$version*u$update-*.tar.gz
+        file_format=liferay-dxp-tomcat-$version*u$update-*
         update_download_url=https://releases-cdn.liferay.com/dxp/$version-u$update/
         url="$update_download_url"
         dl_tar_dir="$LRDIR/$version"
-
-        # Check first if .tar.gz file exists
-        log_echo "checking spider if file exists on releases - $url/$file_format"
-        wget -S --spider -A "$file_format" "$url" &> /dev/null
-
-        if [[ $? -eq 0 ]]; then
-            log_echo "Continuing to download .tar.gz $file_format..."
-        else
-            file_format=liferay-dxp-tomcat-$version*u$update-*.zip
-            log_echo ".tar.gz file doesn't exist, Downloading $file_format instead."
-        fi
     elif [[ $version == '6.2' ]]; then
         # https://releases-cdn.liferay.com/dxp/6.2.10.21/liferay-portal-tomcat-6.2-ee-sp20-20170717160924965.zip
-        file_format="liferay-portal-tomcat-$version-ee-sp$update-*.zip"
+        file_format="liferay-portal-tomcat-$version-ee-sp$update-*"
         portal_update=$((update + 1))
         sp_download_url=https://releases-cdn.liferay.com/dxp/$version.10.$portal_update/
         url=$sp_download_url
         dl_tar_dir=$LRDIR/$version
-
-        log_echo "Portal 6.2 file_format = $file_format ; url = $url ; dl_tar_dir = $dl_tar_dir"
+    elif [[ $1 == 'SP' ]]; then
+        # https://releases.liferay.com/dxp/7.2.10.7/liferay-dxp-tomcat-7.2.10.7-sp7-20220627032045494.tar.gz
+        file_format="liferay-dxp-tomcat-$version.$update-sp$update-*"
+        sp_download_url=https://releases-cdn.liferay.com/dxp/$version.$update/
+        url=$sp_download_url
+        dl_tar_dir=$LRDIR/$version
     else
         echo "DXP releases under 7.3 not supported yet"
     fi
+    
+    zip_file_format="$file_format.tar.gz"
+    # Check first if .tar.gz file exists
+    log_echo "checking spider if file exists on releases - $url/$file_format"
+    wget -S --spider -A "$zip_file_format" "$url" &> /dev/null
+
+    if [[ $? -eq 0 ]]; then
+        log_echo "Continuing to download .tar.gz $file_format..."
+    else
+        zip_file_format="$file_format.zip"
+        log_echo ".tar.gz file doesn't exist, Downloading $file_format instead."
+    fi
+
+    log_echo "$version file_format = $zip_file_format ; url = $url ; dl_tar_dir = $dl_tar_dir"
     echo -e "\n---\n$1 File WGET downloading to $dl_tar_dir (Indexes auto-rejected)"
-    wget -r -np -nd -nH -q --show-progress -A "$file_format" "$url" -P "$dl_tar_dir"
+    wget -r -np -nd -nH -q --show-progress -A "$zip_file_format" "$url" -P "$dl_tar_dir"
 }
 
 createBundle () {
+    makeProjectDir
+
+    # Set Defaults
+    if [[ $update == 'master' ]]; then
+        log_echo -e "$LINENO Master file is $master_file.tar.gz"
+        file_format=$master_file
+    elif [[ $1 == 'QR' ]]; then
+        file_format="liferay-dxp-tomcat-$update-*"
+    elif [[ $1 == 'Update' ]]; then
+        file_format=liferay-dxp-tomcat-$version*u$update-*
+    elif [[ $version == '6.2' ]]; then
+        file_format="liferay-portal-tomcat-$version-ee-sp$update-*"
+    elif [[ $1 == 'SP' ]]; then
+        file_format="liferay-dxp-tomcat-$version.$update-sp$update-*"
+    else
+        file_format="liferay-dxp-*"
+    fi
+
     echo -e "[createBundle] - Start creating Project bundle"
     checkDestinationDir "$1"
     if [[ $update == 'master' ]]; then
@@ -711,7 +923,8 @@ createBundle () {
         # START BUNDLE OR EXIT SCRIPT
         read -rsn1 -p"Press any key to start $BUNDLED bundle... or Ctrl-C to exit";echo
         echo -e "\n---\n"
-        cd "${PROJECTDIR}"/"$project"/"$BUNDLED"/tomcat*/bin/ && ./catalina.sh run
+        cd "${PROJECTDIR}"/"$project"/"$BUNDLED"
+        startTomcat
     else
         echo -e "[ERROR] Folder not created"
         log_echo "$LINENO Source ${LRDIR}/${SRC}"
@@ -779,6 +992,11 @@ setDLR () {
 }
 
 help() {
+    echo "Usage: $0 [-h|--help] [-s|--setup] [-i|--init] [-f|--file <filename>]"
+    echo "  -h|--help  Show this help message"
+    echo "  -s|--setup  Perform setup operations"
+    echo "  -i|--init   Perform initialization"
+    echo "  -f|--file  Specify a file (optional)"
     echo "Usage: $0 [options]"
     echo "  -h, --help  Display this help message"
     echo "  -o, --option  Do something with an option"
@@ -793,386 +1011,330 @@ help() {
     echo -e "\tserverxml: change ports from 8xxx to 9xxx in server.xml"
 }
 
+
+# ---
+options="hsifpcms:"  # Define the options (h for help, s for setup, i for init, f for file)
+
+while getopts "$options" opt; do
+    case "$opt" in
+        h)
+            help
+            exit;;
+        s)
+            startLR
+            exit;;
+        i)
+            init
+            exit;;
+        f)
+            file="$OPTARG"
+            echo "File specified: $file"
+            # Your code to process the file
+            exit;;
+        p)
+            patch
+            exit;;
+        c)
+            echo -e "Running cleanup script: delete Project folder(s) and associated MySQL DB(s)\n---\n"
+            bash ./cleanup.sh
+            echo "Finished running cleanup"
+            exit;;
+        m)
+            mod_menu=("clustering" "staging")
+            echo "[INFO] Mod DXP: $mod_menu[0], $mod_menu[1]"
+            select mod_apply in "${mod_menu[@]}"; do
+                case $mod_apply in
+                "clustering")
+                    updateServerXML
+                    applyClustering
+                    ;;
+                "staging")
+                    updateServerXML
+                    applyTunneling
+                    ;;
+                esac        
+            done
+            exit;;
+        s)
+            startLR
+            exit;;
+        \?)
+            echo "Invalid option: -$OPTARG"
+            exit;;
+    esac
+done
 # ---
 
-if [[ $1 == "help" ]]; then
-    help
-elif [[ $1 == "init" ]]; then
-    init
-elif [[ $1 == "patching" || $1 == "pt" ]]; then
-    downloadPatchingTools
-elif [[ $1 == "clean" ]]; then
-    echo -e "Running cleanup script: delete Project folder(s) and associated MySQL DB(s)\n---\n"
-    bash ./cleanup.sh
-    echo "Finished running cleanup"
-# elif [[ $1 == "config" ]]; then
-#     echo -e "\nSelect Config to Change:"
-#     select config_menu in "MySQL" "2LR"; do
-#         case $config_menu in
-#             "MySQL")
-#                 changeMysqlVersion
-#                 if [ "$mysqlserver" == '3306' ]; then
-#                     # This is on by default if mysql installed
-#                     echo -e "MySQL update complete"
-#                 else
-#                     # Start the DBDeployer server
-#                     read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
-#                     cd "$DBDserver_DIR" && ./start
-#                 fi
-#                 exit
-#                 ;; 
-#             "2LR")
-#                 echo "double setup WIP"
-#                 DLR=true
-#                 exit
-#                 ;;
-#         esac
-#     done
-elif [[ $1 == "serverxml" ]]; then
-    updateServerXML
-elif [[ $1 == "start" ]]; then
-    startLR
-elif [[ $1 == "mod" ]]; then
-    mod_menu=("clustering" "staging")
-    select mod_apply in "${mod_menu[@]}"; do
-        case $mod_apply in
-        "clustering")
-            updateServerXML
-            applyClustering
-            ;;
-        "staging")
-            updateServerXML
-            applyTunneling
-            ;;
-        esac        
-    done
-elif [[ $# -eq 0 ]]; then
-    if [ -z ${LRDIR+x} ]; then
-        init
-        exec bash
+makeProjectDir() {
+    mkdir -p "${PROJECTDIR}"/"$project"/
+    if [[ -e "${PROJECTDIR}"/"$project"/ ]]; then
+        echo -e "[SUCCESS] Project started at ${PROJECTDIR}/$project/"
     else
-        # NAME THE PROJECT DIR
-        read -p 'Project Code: ' project
-        mkdir -p "${PROJECTDIR}"/"$project"/
-        if [[ -e "${PROJECTDIR}"/"$project"/ ]]; then
-            echo -e "[SUCCESS] Project started at ${PROJECTDIR}/$project/"
-        else
-            echo -e "ERROR: Project dir not created. Please manually make dir."
-            xdg-open "${PROJECTDIR}"
-        fi
+        echo -e "ERROR: Project dir not created. Please manually make dir."
+        xdg-open "${PROJECTDIR}"
+    fi
+}
 
-        # Select DXP version
-        echo -e "\n---\n[SELECT] Choose Liferay version to install:"
-        DXP=("Branch" "Quarterly Release" "7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "6.2" "6.1" "Exit")
-        select version in "${DXP[@]}"; do
-            versiontrim=${version//.}
-            case $version in
-                "Branch")
-                    echo -e "[SELECT] Choose Branch"
-                    branches=("master" "nightly" "7.3.10")
-                    select update in "${branches[@]}"; do
-                        case $update in
-                        "master")
-                            # check for master dir
-                            SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name $master_file | sort -r | head -2))
-                            SRCRAW=${SRCTEST[0]}
-                            log_echo "$LINENO master search result (first only): $SRCRAW"
-                            ## FIX THIS
-                            if [[ -z "$variable_name" ]]; then
-                                echo "No master available."
-                                checkArchive $1
-                                SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
-                                log_echo "$LINENO SRC location is $SRC"
-                                BUNDLED="liferay-portal-tomcat-master-private-all"
-                                SCHEMA="${project}_master"
-                                createBundle Branch
-                            else
-                                SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
-                                log_echo "$LINENO SRC location is $SRC"
-                                BUNDLED="liferay-portal-tomcat-master-private-all"
-                                SCHEMA="${project}_master"
-                                createBundle Branch
-                            fi
-                            break
-                            ;;
-                        "nightly")
-                            SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name $nightly_file | sort -r | head -2))
-                            for key in "${!SRCTEST[@]}"
-                                do
-                                echo -e "Key is '$key'  => Value is '${SRCTEST[$key]}'"
-                                done
-                            SRCRAW=${SRCTEST[0]}
+
+if [ -z ${LRDIR+x} ]; then
+    init
+    exec bash
+else
+    # NAME THE PROJECT DIR, if not passed through $1 already
+    if [[ -n $1 ]]; then
+        project=$1
+    # elif [[ $# -eq 0 ]]; then
+    else
+        echo "Tip: For faster setup, use: $0 [Project Name]"
+        echo "[EXAMPLE] quickLR CHICAGOLCS"
+
+        read -p 'Project Code: ' project
+    fi
+
+    until [[ -n "$project" ]]; do
+        read -p 'Project Code: ' project
+    done 
+    project=$(echo "$project" | tr '[:lower:]' '[:upper:]')
+    echo "Project $project"
+
+    # Select DXP version
+    echo -e "\n---\n[SELECT] Choose Liferay version to install:"
+    DXP=("Branch" "Quarterly Release" "7.4.13" "7.3.10" "7.2.10" "7.1.10" "7.0.10" "6.2" "6.1" "Exit")
+    select version in "${DXP[@]}"; do
+        versiontrim=${version//.}
+        case $version in
+            "Branch")
+                echo -e "[SELECT] Choose Branch"
+                branches=("master" "nightly")
+                select update in "${branches[@]}"; do
+                    case $update in
+                    "master")
+                        # check for master dir
+                        SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name $master_file | sort -r | head -2))
+                        SRCRAW=${SRCTEST[0]}
+                        log_echo "$LINENO master search result (first only): $SRCRAW"
+                        ## FIX THIS
+                        if [[ -z "$variable_name" ]]; then
+                            echo "No master available."
+                            checkArchive $1
                             SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                             log_echo "$LINENO SRC location is $SRC"
-                            BUNDLED="liferay-dxp-tomcat-7.4.13.nightly"
-                            SCHEMA="${versiontrimx}_${project}_$update"
+                            BUNDLED="liferay-portal-tomcat-master-private-all"
+                            SCHEMA="${project}_master"
                             createBundle Branch
-                            break
-                            ;;
-                        # "7.3.10")
-                        #     log_echo "$LINENO Finding SRC in $LRDIR/$version"
-                        #     SRCTEST=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$update"* | sort -r | head -2)
-                        #     for key in "${!SRCTEST[@]}"
-                        #         do
-                        #         log_echo "Key is '$key'  => Value is '${SRCTEST[$key]}'"
-                        #         done
-                        #     SRCRAW=${SRCTEST[0]}
-                        #     log_echo "SRCRAW: $SRCRAW"
-                        #     PRESRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
-                        #     SRC=$PRESRC/liferay-dxp/
-                        #     log_echo "SRC location is $SRC"
-                        #     BUNDLED="liferay-dxp-tomcat-$update"
-                        #     SCHEMA="QR_${project}_${updatemysql}"
-                        #     createBundle QR
-                        #     break
-                        #     ;;
-                        esac
-                    done
-                    break
-                    ;;
-                "Quarterly Release")
-                    if ! [[ $dbPort == '3306' ]]; then
-                        changeMysqlVersion
-                    else
-                        echo -e "\n---\nINFO: dbPort is $dbPort"
-                    fi
-                    versiontrimx=${version// }
-                    read -p "Select DXP 7.4 $version patch level: " update
-                    numcheck='^[0-9]+\.q[0-9]+\.[0-9]+'
-                    until [[ $update =~ ($numcheck|nightly|master) ]]; do
-                        echo -e "ERROR: Invalid Input. Valid Inputs: YYYY.q#.# (ie 2023.q3.0)\n"
-                        read -p "Select DXP $version patch level (Update): " update
-                    done
-                    updatemysql=${update//./}
-                    echo -e "\n---\n"
-                    # log_echo "$LINENO Finding SRC in $LRDIR/$version"
-                    # SRCTEST=$(find "${LRDIR}"/"$version" -maxdepth 2 -type d -name liferay-dxp-tomcat-"$update"* | sort -r | head -2)
-                    # for key in "${!SRCTEST[@]}"
-                    #     do
-                    #     log_echo "Key is '$key'  => Value is '${SRCTEST[$key]}'"
-                    #     done
-                    # SRCRAW=${SRCTEST[0]}
-                    # log_echo "SRCRAW: $SRCRAW"
-                    # PRESRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
-                    # SRC=$PRESRC/liferay-dxp/
-                    # log_echo "SRC location is $SRC"
-                    BUNDLED="liferay-dxp-tomcat-$update"
-                    SCHEMA="QR_${project}_${updatemysql}"
-                    createBundle QR
-                    break
-                    ;;
-                "7.4.13")
-                    if ! [[ $dbPort == '3306' ]]; then
-                        changeMysqlVersion
-                    else
-                        echo "INFO: dbPort is $dbPort"
-                    fi
-                    versiontrimx=${versiontrim//13}
-                    read -p "Select DXP $version patch level: " update
-                    numcheck='^[0-9]+$'
-                    until [[ $update =~ ($numcheck|master|nightly) ]]; do
-                        echo -e "ERROR: Invalid Input. Valid Inputs: Update or master.\n"
-                        read -p "Select DXP $version patch level (Update): " update
-                    done
-                    echo -e "\n---\n"
-                    if [ "$update" == 'master' ]; then
-                        SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *portal-master* | sort -r | head -2))
+                        else
+                            SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
+                            log_echo "$LINENO SRC location is $SRC"
+                            BUNDLED="liferay-portal-tomcat-master-private-all"
+                            SCHEMA="${project}_master"
+                            createBundle Branch
+                        fi
+                        break
+                        ;;
+                    "nightly")
+                        SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name $nightly_file | sort -r | head -2))
+                        for key in "${!SRCTEST[@]}"
+                            do
+                            echo -e "Key is '$key'  => Value is '${SRCTEST[$key]}'"
+                            done
                         SRCRAW=${SRCTEST[0]}
                         SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
                         log_echo "$LINENO SRC location is $SRC"
-                        # SRC="Branch/liferay-portal-tomcat-master-all/liferay-portal-master-all"
-                        BUNDLED="liferay-portal-tomcat-$version-$update"
+                        BUNDLED="liferay-dxp-tomcat-7.4.13.nightly"
                         SCHEMA="${versiontrimx}_${project}_$update"
                         createBundle Branch
-                    elif [ "$update" == 'nightly' ]; then
-                        SRCTEST=($(find "${LRDIR}"/Branch -maxdepth 2 -type d -name *nightly* | sort -r | head -2))
-                        SRCRAW=${SRCTEST[0]}
-                        SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
-                        log_echo "$LINENO SRC location is $SRC"
-                        # SRC="Branch/liferay-dxp-tomcat-7.4.13.nightly/liferay-portal-7.4.13.nightly"
-                        BUNDLED="liferay-dxp-tomcat-$version-$update"
-                        SCHEMA="${versiontrimx}_${project}_$update"
-                        createBundle Branch
-                    elif [ "$update" == 'q3' ] || [ "$update" == 'q4' ]; then
-                        SRCTEST=($(find "${LRDIR}"/7.4.13 -maxdepth 2 -type d -name liferay-dxp-tomcat-*"$update"* | sort -r | head -2))
-                        SRCRAW=${SRCTEST[0]}
-                        SRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
-                        # SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
-                        # liferay-dxp-tomcat-2023.q4.0-1701894289
-                        BUNDLED="liferay-dxp-tomcat-2023.$update"
-                        SCHEMA="${versiontrimx}_${project}_U${update}"
-                        createBundle Update
-                    else
-                        # SRCTEST=($(find "${LRDIR}"/7.4.13 -maxdepth 2 -type d -name liferay-dxp-tomcat-*"$update"* | sort -r | head -2))
-                        # echo "srctest: $SRCTEST"
-                        # SRCRAW=${SRCTEST[0]}
-                        # log_echo "798 srcraw: $SRCRAW"
-                        # PRESRC=$(echo "$SRCRAW" | sed -e "s!$LRDIR!!g")
-                        # SRC=$PRESRC/liferay-dxp-$version.u$update
-                        # echo "DEBUG SRC: $SRC"
-                        BUNDLED="liferay-dxp-tomcat-$version.u$update"
-                        SCHEMA="${versiontrimx}_${project}_U${update}"
-                        createBundle Update
-                    fi
-                    break
-                    ;;
-                "7.3.10")
-                    # START 73 - USES UPDATES, SP and FP
-                    versiontrimx=${versiontrim//10}
+                        break
+                        ;;
+                    esac
+                done
+                break
+                ;;
+            "Quarterly Release")
+                if ! [[ $dbPort == '3306' ]]; then
+                    changeMysqlVersion
+                else
+                    echo -e "\n---\nINFO: dbPort is $dbPort"
+                fi
+                versiontrimx=${version// }
+                read -p "Select DXP 7.4 $version patch level: " update
+                numcheck='^[0-9]+\.q[0-9]+\.[0-9]+'
+                until [[ $update =~ ($numcheck|nightly|master) ]]; do
+                    echo -e "ERROR: Invalid Input. Valid Inputs: YYYY.q#.# (ie 2023.q3.0)\n"
+                    read -p "Select DXP $version patch level (Update): " update
+                done
+                updatemysql=${update//./}
+                echo -e "\n---\n"
+                BUNDLED="liferay-dxp-tomcat-$update"
+                SCHEMA="QR_${project}_${updatemysql}"
+                createBundle QR
+                break
+                ;;
+            "7.4.13")
+                if ! [[ $dbPort == '3306' ]]; then
+                    changeMysqlVersion
+                else
+                    echo "INFO: dbPort is $dbPort"
+                fi
+                versiontrimx=${versiontrim//13}
+                read -p "Select DXP $version patch level: " update
+                numcheck='^[0-9]+$'
+                until [[ $update =~ ($numcheck|master|nightly) ]]; do
+                    echo -e "ERROR: Invalid Input. Valid Inputs: Update or master.\n"
+                    read -p "Select DXP $version patch level (Update): " update
+                done
+                echo -e "\n---\n"
+                BUNDLED="liferay-dxp-tomcat-$version.u$update"
+                SCHEMA="${versiontrimx}_${project}_U${update}"
+                createBundle Update
+                break
+                ;;
+            "7.3.10")
+                # START 73 - USES UPDATES, SP and FP
+                versiontrimx=${versiontrim//10}
+                read -p "Select DXP $version patch level: " update
+                numcheck='^[0-9]+$'
+                until [[ $update =~ ($numcheck|branch) ]]; do
+                    echo -e "ERROR: Invalid Input. Valid Inputs: Update, FP or branch.\n"
                     read -p "Select DXP $version patch level: " update
+                done
+                echo -e "\n---\n"
+                if (( $update > 3 )); then
+                    SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
+                    BUNDLED="liferay-dxp-tomcat-$version.u$update"
+                    SCHEMA="${versiontrimx}_${project}_U${update}"
+                    createBundle Update
+                elif (( $update == 1 )) || (( $update == 3 )); then
+                    # -- IF SP = liferay-dxp-tomcat-7.3.10.1-sp1/liferay-dxp-7.3.10.1-sp1
+                    SRC="$version/liferay-dxp-tomcat-$version.$update-sp$update/liferay-dxp-$version.$update-sp$update"
+                    BUNDLED="liferay-dxp-tomcat-$version-sp$update"
+                    SCHEMA="${versiontrimx}_${project}_SP${update}"
+                    createBundle SP
+                else
+                    SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
+                    BUNDLED="liferay-dxp-tomcat-$version.dxp-$update"
+                    SCHEMA="${versiontrimx}_${project}_dxp${update}"
+                    createBundle FP
+                fi
+                break
+                ;;
+            "7.2.10" | "7.1.10" | "7.0.10")
+                if [ "$version" == '7.0.10' ]; then
+                    echo -e "WARN: Update Config - DXP 7.0 is only compatible with MySQL 5.6 or 5.7."
+                    if [[ $dbPort == '3306' ]]; then
+                        changeMysqlVersion
+                    else
+                        echo -e "INFO: dbPort is $dbPort"
+                    fi
+                else
+                    echo -e "INFO: dbPort is $dbPort"
+                fi
+                versiontrimx=${versiontrim//10}
+                versionshort=${version//.10}
+                updateTypeList=("Update" "FP" "SP" "Branch")
+                echo -e "[SELECT] Choose an Update Type:"
+                select updateType in "${updateTypeList[@]}"; do
+                    echo -e "[CHECK] UpdateType set as $updateType\n---\n"
+                    read -p "Select DXP $version patch level: ($updateType)" update
                     numcheck='^[0-9]+$'
                     until [[ $update =~ ($numcheck|branch) ]]; do
-                        echo -e "ERROR: Invalid Input. Valid Inputs: Update, FP or branch.\n"
+                        echo -e "ERROR: Invalid Input. Valid Inputs: Number or branch\n"
                         read -p "Select DXP $version patch level: " update
                     done
                     echo -e "\n---\n"
-                    if (( $update > 3 )); then
-                        SRC="$version/liferay-dxp-tomcat-$version.u$update/liferay-dxp-$version.u$update"
-                        BUNDLED="liferay-dxp-tomcat-$version.u$update"
-                        SCHEMA="${versiontrimx}_${project}_U${update}"
-                        createBundle Update
-                    elif (( $update == 1 )) || (( $update == 3 )); then
-                        # -- IF SP = liferay-dxp-tomcat-7.3.10.1-sp1/liferay-dxp-7.3.10.1-sp1
-                        SRC="$version/liferay-dxp-tomcat-$version.$update-sp$update/liferay-dxp-$version.$update-sp$update"
-                        BUNDLED="liferay-dxp-tomcat-$version-sp$update"
-                        SCHEMA="${versiontrimx}_${project}_SP${update}"
-                        createBundle SP
-                    elif [ "$update" == 'branch' ]; then
-                        versiontrim=${version//.10}
-                        SRC="Branch/liferay-portal-tomcat-${versiontrim}.x-private-all/liferay-portal-${versiontrim}.x-private-all"
-                        BUNDLED="liferay-$version-$update"
+
+                    if [ "$update" == 'branch' ]; then
+                        SRC="Branch/liferay-portal-tomcat-$versionshort.x-private-all/liferay-portal-$versionshort.x-private-all"
+                        BUNDLED="liferay-$versionshort-$update"
                         SCHEMA="${versiontrimx}_${project}_$update"
                         createBundle Branch
                     else
-                        SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
-                        BUNDLED="liferay-dxp-tomcat-$version.dxp-$update"
-                        SCHEMA="${versiontrimx}_${project}_dxp${update}"
-                        createBundle FP
-                    fi
-                    break
-                    ;;
-                "7.2.10" | "7.1.10" | "7.0.10")
-                    if [ "$version" == '7.0.10' ]; then
-                        echo -e "WARN: Update Config - DXP 7.0 is only compatible with MySQL 5.6 or 5.7."
-                        if [[ $dbPort == '3306' ]]; then
-                            changeMysqlVersion
-                        else
-                            echo -e "INFO: dbPort is $dbPort"
-                        fi
-                    else
-                        echo -e "INFO: dbPort is $dbPort"
-                    fi
-                    versiontrimx=${versiontrim//10}
-                    versionshort=${version//.10}
-                    updateTypeList=("Update" "FP" "SP" "Branch")
-                    echo -e "[SELECT] Choose an Update Type:"
-                    select updateType in "${updateTypeList[@]}"; do
-                        echo -e "[CHECK] UpdateType set as $updateType\n---\n"
-                        read -p "Select DXP $version patch level: ($updateType)" update
-                        numcheck='^[0-9]+$'
-                        until [[ $update =~ ($numcheck|branch) ]]; do
-                            echo -e "ERROR: Invalid Input. Valid Inputs: Number or branch\n"
-                            read -p "Select DXP $version patch level: " update
-                        done
-                        echo -e "\n---\n"
-
-                        if [ "$update" == 'branch' ]; then
-                            SRC="Branch/liferay-portal-tomcat-$versionshort.x-private-all/liferay-portal-$versionshort.x-private-all"
-                            BUNDLED="liferay-$versionshort-$update"
-                            SCHEMA="${versiontrimx}_${project}_$update"
-                            createBundle Branch
-                        else
-                            if [ "$version" == '7.0.10' ]; then
-                                # liferay-dxp-digital-enterprise-tomcat-7.0-ga1/liferay-dxp-digital-enterprise-7.0-ga1
-                                if [ "$updateType" = 'FP' ]; then
-                                    SRC="$version/liferay-dxp-digital-enterprise-tomcat-$versionshort-ga1/liferay-dxp-digital-enterprise-$versionshort-ga1"
-                                elif [ "$updateType" = 'SP' ]; then
-                                    # liferay-dxp-digital-enterprise-tomcat-7.0.10.17-sp17/liferay-dxp-digital-enterprise-7.0.10.17-sp17
-                                    SRC="$version/liferay-dxp-digital-enterprise-tomcat-$version.$update-sp$update/liferay-dxp-digital-enterprise-$version.$update-sp$update"
-                                else 
-                                    SRC="$version/liferay-dxp-digital-enterprise-tomcat-$versionshort-ga1/liferay-dxp-digital-enterprise-$versionshort-ga1"
-                                fi
-                                
-                                BUNDLED="liferay-dxp-$version.$updateType-$update"
-                                SCHEMA="${versiontrimx}_${project}_$updateType${update}"
-                                createBundle "$updateType"
-        
-                            else
-                                if [ "$updateType" = 'FP' ]; then
-                                    SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
-                                elif [ "$updateType" = 'SP' ]; then
-                                    SRC="$version/liferay-dxp-tomcat-$version.$update-sp$update/liferay-dxp-$version.$update-sp$update"
-                                else 
-                                    SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
-                                fi
-
-                                BUNDLED="liferay-dxp-$version.$updateType-$update"
-                                SCHEMA="${versiontrimx}_${project}_$updateType${update}"
-                                createBundle "$updateType"
+                        if [ "$version" == '7.0.10' ]; then
+                            # liferay-dxp-digital-enterprise-tomcat-7.0-ga1/liferay-dxp-digital-enterprise-7.0-ga1
+                            if [ "$updateType" = 'FP' ]; then
+                                SRC="$version/liferay-dxp-digital-enterprise-tomcat-$versionshort-ga1/liferay-dxp-digital-enterprise-$versionshort-ga1"
+                            elif [ "$updateType" = 'SP' ]; then
+                                # liferay-dxp-digital-enterprise-tomcat-7.0.10.17-sp17/liferay-dxp-digital-enterprise-7.0.10.17-sp17
+                                SRC="$version/liferay-dxp-digital-enterprise-tomcat-$version.$update-sp$update/liferay-dxp-digital-enterprise-$version.$update-sp$update"
+                            else 
+                                SRC="$version/liferay-dxp-digital-enterprise-tomcat-$versionshort-ga1/liferay-dxp-digital-enterprise-$versionshort-ga1"
                             fi
-                        fi
-                        break
-                    done
-                    break
-                    ;;
-                "6.2" | "6.1")
-                    if [ "$version" == '6.2' ]; then
-                        echo -e "WARN: Update Config - Portal 6.2 is only compatible with MySQL 5.5."
-                        if [[ ! $dbPort =~ 55[0-9][0-9] ]]; then
-                            changeMysqlVersion
+                            
+                            BUNDLED="liferay-dxp-$version.$updateType-$update"
+                            SCHEMA="${versiontrimx}_${project}_$updateType${update}"
+                            createBundle "$updateType"
+    
                         else
-                            echo -e "INFO: dbPort is $dbPort"
+                            if [ "$updateType" = 'FP' ]; then
+                                SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
+                            elif [ "$updateType" = 'SP' ]; then
+                                SRC="$version/liferay-dxp-tomcat-$version.$update-sp$update/liferay-dxp-$version.$update-sp$update"
+                            else 
+                                SRC="$version/liferay-dxp-tomcat-$version-ga1/liferay-dxp-$version-ga1"
+                            fi
+
+                            BUNDLED="liferay-dxp-tomcat-$version.$update-sp$update"
+                            SCHEMA="${versiontrimx}_${project}_$updateType${update}"
+                            createBundle "$updateType"
                         fi
+                    fi
+                    break
+                done
+                break
+                ;;
+            "6.2" | "6.1")
+                if [ "$version" == '6.2' ]; then
+                    echo -e "WARN: Update Config - Portal 6.2 is only compatible with MySQL 5.5."
+                    if [[ ! $dbPort =~ 55[0-9][0-9] ]]; then
+                        changeMysqlVersion
                     else
                         echo -e "INFO: dbPort is $dbPort"
                     fi
-                    versiontrimx=${versiontrim//10}
-                    # CHOOSE A SP
-                    read -p "Select Portal $version patch level (SP #): " update
-                    numcheck='^[0-9]+$'
-                    until [[ $update =~ ($numcheck|branch) ]]; do
-                        echo -e "ERROR: Invalid Input. Valid Inputs: SP # or branch\n"
-                        read -p "Select Portal $version patch level: " update
-                    done
-                    echo -e "\n---\n"
-                    # TODO: consider hashmap / lookup table to make FP to SP
-                    # declare -A fixpacks
-                    # fixpacks=( ["SP20"]=154 ["SP19"]=148 ["SP18"]=138)
-                    if (( $update > 20 )); then
-                        echo -e "WARN: Service Pack needed, no fix pack support yet."
-                    elif [ "$update" == 'branch' ]; then
-                        echo -e "WARN: No branch support yet for Portal 6.2 or 6.1"
-                    else
-                        echo "Ok, setting up a $project folder with Portal $version SP $update bundle..."
-                        # liferay-portal-tomcat-6.2-ee-sp18/liferay-portal-6.2-ee-sp18/
-                        SRC="$version/liferay-portal-tomcat-$version-ee-sp$update/liferay-portal-$version-ee-sp$update"
-                        BUNDLED="liferay-portal-tomcat-$version.ee-sp$update"
-                        SCHEMA="${versiontrim}_${project}_SP${update}"
-                        createBundle SP
-                    fi
-                    break
-                    ;;
-                # "Config")
-                #     changeMysqlVersion
-                #     if [ $mysqlserver == '3306' ]; then
-                #         # This is on by default if mysql installed
-                #         echo "Nothing else to do"
-                #     else
-                #         # Start the DBDeployer server
-                #         read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
-                #         cd $DBDserver_DIR && ./start
-                #     fi
-                #     exit
-                #     ;;
-                "Exit")
-                    echo "User requested exit"
-                    exit
-                    ;;
-                *) echo "invalid option $REPLY";;
-            esac
-        done
-    fi
-else
-    echo "Invalid argument"
-
+                else
+                    echo -e "INFO: dbPort is $dbPort"
+                fi
+                versiontrimx=${versiontrim//10}
+                # CHOOSE A SP
+                read -p "Select Portal $version patch level (SP #): " update
+                numcheck='^[0-9]+$'
+                until [[ $update =~ ($numcheck|branch) ]]; do
+                    echo -e "ERROR: Invalid Input. Valid Inputs: SP # or branch\n"
+                    read -p "Select Portal $version patch level: " update
+                done
+                echo -e "\n---\n"
+                # TODO: consider hashmap / lookup table to make FP to SP
+                # declare -A fixpacks
+                # fixpacks=( ["SP20"]=154 ["SP19"]=148 ["SP18"]=138)
+                if (( $update > 20 )); then
+                    echo -e "WARN: Service Pack needed, no fix pack support yet."
+                elif [ "$update" == 'branch' ]; then
+                    echo -e "WARN: No branch support yet for Portal 6.2 or 6.1"
+                else
+                    echo "Ok, setting up a $project folder with Portal $version SP $update bundle..."
+                    # liferay-portal-tomcat-6.2-ee-sp18/liferay-portal-6.2-ee-sp18/
+                    SRC="$version/liferay-portal-tomcat-$version-ee-sp$update/liferay-portal-$version-ee-sp$update"
+                    BUNDLED="liferay-portal-tomcat-$version.ee-sp$update"
+                    SCHEMA="${versiontrim}_${project}_SP${update}"
+                    createBundle SP
+                fi
+                break
+                ;;
+            # "Config")
+            #     changeMysqlVersion
+            #     if [ $mysqlserver == '3306' ]; then
+            #         # This is on by default if mysql installed
+            #         echo "Nothing else to do"
+            #     else
+            #         # Start the DBDeployer server
+            #         read -rsn1 -p"Press any key to start $mysqlserver server... or Ctrl-C to exit";echo
+            #         cd $DBDserver_DIR && ./start
+            #     fi
+            #     exit
+            #     ;;
+            "Exit")
+                echo "User requested exit"
+                exit
+                ;;
+            *) echo "invalid option $REPLY";;
+        esac
+    done
 fi
